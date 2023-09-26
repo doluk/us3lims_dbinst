@@ -246,6 +246,20 @@ abstract class File_writer
                 $xml->writeAttribute( 'density', $dataset['density'] );
                 $xml->writeAttribute( 'viscosity', $dataset['viscosity'] );
                 $xml->writeAttribute( 'manual', $dataset['manual'] );
+                foreach( $dataset['cosedcomponents'] as $cosed)
+                {
+                  $xml->startElement('cosedcomponent');
+                    $xml->writeAttribute('id', $cosed['id']);
+                    $xml->writeAttribute('name', $cosed['name']);
+                    $xml->writeAttribute('conc', $cosed['conc']);
+                    $xml->writeAttribute('s', $cosed['s']);
+                    $xml->writeAttribute('D', $cosed['D']);
+                    $xml->writeAttribute('dens', $cosed['dens']);
+                    $xml->writeAttribute('visc', $cosed['visc']);
+                    $xml->writeAttribute('vbar', $cosed['vbar']);
+                    $xml->writeAttribute('overlay', $cosed['overlay']);
+                  $xml->endElement(); // cosedcomponent
+                }
               $xml->endElement(); // buffer
               foreach( $dataset['analytes'] as $analyte )
               {
