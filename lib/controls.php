@@ -16,7 +16,7 @@ echo<<<HTML
         <legend>Monte Carlo Iterations</legend>
         <div class='newslider' id='montecarlo-slider'></div>
         <br />
-        Value:   <input name='mc_iterations' 
+        Value:   <input name='mc_iterations' type='number'
                         id='mc_iterations'
                         size='12'
                         value='1' />
@@ -129,7 +129,7 @@ echo<<<HTML
         <legend>Simulation Points</legend>
         <div class='newslider' id='simpoints-slider'></div>
         <br />
-        Value:   <input name='simpoints-value' 
+        Value:   <input name='simpoints-value' type='number'
                         id='simpoints-value'
                         size='12'
                         value='200' />
@@ -151,7 +151,7 @@ echo<<<HTML
         <legend>Band Loading Volume</legend>
         <div class='newslider' id='band_volume-slider'></div>
         <br />
-        Value:   <input name='band_volume-value' 
+        Value:   <input name='band_volume-value' type='number' step='any'
                         id='band_volume-value'
                         size='12'
                         value='0.015' />
@@ -208,7 +208,7 @@ echo<<<HTML
           <legend>Debug Level</legend>
           <div class="newslider" id="debug_level-slider"></div>
           <br/>
-          Value:   <input name='debug_level-value'
+          Value:   <input name='debug_level-value' type='number'
                           id='debug_level-value'
                           size='3'
                           value='0' />
@@ -285,9 +285,9 @@ function s_grid_points()
 echo<<<HTML
     <fieldset class='option_value'>
        <legend>S-Value Resolution</legend>
-       <input type="text" value="1" name="s_value_min"/> S-Value Minimum<br/>
-       <input type="text" value="10" name="s_value_max"/> S-Value Maximum<br/>
-       <input type="text" value="64" name="s_grid_points"/> S-Value Resolution (total grid points)<br/>
+       <input type="number" step="any" value="1" name="s_value_min"/> S-Value Minimum<br/>
+       <input type="number" step="any" value="10" name="s_value_max"/> S-Value Maximum<br/>
+       <input type="number" step="any" value="64" name="s_grid_points"/> S-Value Resolution (total grid points)<br/>
     </fieldset>
 HTML;
 }
@@ -298,10 +298,10 @@ function mw_constraint()
 echo<<<HTML
     <fieldset class='option_value' id='mw_constraints'>
        <legend>Molecular Weight Constraints</legend>
-       <input type="text" value="100" name="mw_value_min"/> Molecular Weight Minimum (Daltons)<br/>
-       <input type="text" value="1000" name="mw_value_max"/> Molecular Weight Maximum (Daltons)<br/>
-       <input type="text" value="10" name="grid_res"/> Grid Resolution<br/>
-       <input type="text" value="4" name="oligomer" id="largest_oligomer"
+       <input type="number" step="any" value="100" name="mw_value_min"/> Molecular Weight Minimum (Daltons)<br/>
+       <input type="number" step="any" value="1000" name="mw_value_max"/> Molecular Weight Maximum (Daltons)<br/>
+       <input type="number" step="any" value="10" name="grid_res"/> Grid Resolution<br/>
+       <input type="number" step="any" value="4" name="oligomer" id="largest_oligomer"
               onchange='generate_oligomer_string();'/> Largest Oligomer<br/>
        <input type='checkbox' name='selectmonomer' value='1' id='selectmonomer'
               onchange='generate_oligomer_string();'/> Select Individual Monomers
@@ -315,9 +315,9 @@ function ff0_grid_points()
 echo<<<HTML
     <fieldset class='option_value'>
       <legend>f/f0 Resolution</legend>
-      <input type="text" value="1" name="ff0_min"/> f/f0 Minimum<br/>
-      <input type="text" value="4" name="ff0_max"/> f/f0 Maximum<br/>
-      <input type="text" value="64" name="ff0_grid_points"/> f/f0 Resolution (total grid points)<br/>
+      <input type="number" step="any" value="1" name="ff0_min"/> f/f0 Minimum<br/>
+      <input type="number" step="any" value="4" name="ff0_max"/> f/f0 Maximum<br/>
+      <input type="number" step="any" value="64" name="ff0_grid_points"/> f/f0 Resolution (total grid points)<br/>
     </fieldset>
 HTML;
 }
@@ -479,13 +479,13 @@ echo<<<HTML
                checked='checked'/> Off<br/>
         <div style="display:none" id="mag9">
           <br/>
-          <input type="text" name="meniscus_range_9" value="0.03"/>Meniscus Fit Range (cm)<br/>
+          <input type="number" step="any" name="meniscus_range_9" value="0.03"/>Meniscus Fit Range (cm)<br/>
           <br/>
           <fieldset>
             <legend>Meniscus Grid Points</legend>
             <div class='newslider' id='meniscus-slider'></div>
             <br />
-            Value:   <input name='meniscus_points' 
+            Value:   <input name='meniscus_points' type='number'
                             id='meniscus_points'
                             size='12'
                             value='10' />
@@ -502,7 +502,7 @@ HTML;
 }
 */
  
-//          <input type="text" name="meniscus_range" value="0.03"/>Fit Range (cm)<br/>
+//          <input type="number" step="any" name="meniscus_range" value="0.03"/>Fit Range (cm)<br/>
 // Function to display the fit meniscus/bottom option
 function fit_menibott()
 {
@@ -517,13 +517,13 @@ echo<<<HTML
           </select>
         <div style="display:none" id="mag1">
           <br/>
-          <input type="text" value="0.03" name="meniscus_range"/>Fit Range (cm)<br/>
+          <input type="number" step="any" value="0.03" name="meniscus_range"/>Fit Range (cm)<br/>
           <br/>
           <fieldset>
             <legend>Fit Grid Points</legend>
             <div class='newslider' id='meniscus-slider'></div>
             <br/>
-            Value:   <input name='meniscus_points' 
+            Value:   <input name='meniscus_points' type='number'
                             id='meniscus_points'
                             size='12'
                             value='11' />
@@ -555,7 +555,7 @@ echo<<<HTML
             <legend>Maximum Number of Iterations</legend>
             <div class='newslider' id='iterations-slider'></div>
             <br />
-            Value:   <input name='max_iterations' 
+            Value:   <input name='max_iterations' type='number'
                             id='max_iterations'
                             size='12'
                             value='10' />
@@ -604,7 +604,7 @@ echo<<<HTML
 
         <div class='newslider' id='demes-slider'></div>
         <br />
-        Value:   <input name='demes-value' 
+        Value:   <input name='demes-value' type='number'
                         id='demes-value'
                         size='4'
                         value='1' />
@@ -640,7 +640,7 @@ echo<<<HTML
         <legend>Population Size</legend>
         <div class='newslider' id='genes-slider'></div>
         <br />
-        Value:   <input name='genes-value' 
+        Value:   <input name='genes-value' type='number'
                         id='genes-value'
                         size='12'
                         value='200' />
@@ -662,7 +662,7 @@ echo<<<HTML
         <legend>Generations</legend>
         <div class='newslider' id='generations-slider'></div>
         <br />
-        Value:   <input name='generations-value' 
+        Value:   <input name='generations-value' type='number'
                         id='generations-value'
                         size='12'
                         value='100' />
@@ -684,7 +684,7 @@ echo<<<HTML
         <legend>Crossover Percent</legend>
         <div class='newslider' id='crossover-slider'></div>
         <br />
-        Value:   <input name='crossover-value' 
+        Value:   <input name='crossover-value' type='number'
                         id='crossover-value'
                         size='12'
                         value='50' />
@@ -706,7 +706,7 @@ echo<<<HTML
         <legend>Mutation Percent</legend>
         <div class='newslider' id='mutation-slider'></div>
         <br />
-        Value:   <input name='mutation-value' 
+        Value:   <input name='mutation-value' type='number'
                         id='mutation-value'
                         size='12'
                         value='50' />
@@ -728,7 +728,7 @@ echo<<<HTML
         <legend>Plague Percent</legend>
         <div class='newslider' id='plague-slider'></div>
         <br />
-        Value:   <input name='plague-value' 
+        Value:   <input name='plague-value' type='number'
                         id='plague-value'
                         size='12'
                         value='4' />
@@ -750,7 +750,7 @@ echo<<<HTML
         <legend>Elitism</legend>
         <div class='newslider' id='elitism-slider'></div>
         <br />
-        Value:   <input name='elitism-value' 
+        Value:   <input name='elitism-value' type='number'
                         id='elitism-value'
                         size='12'
                         value='2' />
@@ -772,7 +772,7 @@ echo<<<HTML
         <legend>Migration Rate</legend>
         <div class='newslider' id='migration-slider'></div>
         <br />
-        Value:   <input name='migration-value' 
+        Value:   <input name='migration-value' type='number'
                         id='migration-value'
                         size='12'
                         value='3' />
@@ -794,7 +794,7 @@ echo<<<HTML
         <legend>Regularization (in %)</legend>
         <div class='newslider' id='regularization-slider'></div>
         <br />
-        Value:   <input name='regularization-value' 
+        Value:   <input name='regularization-value' type='number'
                         id='regularization-value'
                         size='12'
                         value='5' />
@@ -816,7 +816,7 @@ echo<<<HTML
         <legend>Random Seed</legend>
         <div class='newslider' id='seed-slider'></div>
         <br />
-        Value:   <input name='seed-value' 
+        Value:   <input name='seed-value' type='number' step='any'
                         id='seed-value'
                         size='12'
                         value='0' />
@@ -838,7 +838,7 @@ echo<<<HTML
         <legend>Concentration Threshold</legend>
         <div class="newslider" id="conc_threshold-slider"></div>
         <br/>
-        Value:   <input name="conc_threshold-value"
+        Value:   <input name="conc_threshold-value" type='number' step='any'
                         id="conc_threshold-value"
                         size='12'
                         value="0.00001" />
@@ -860,7 +860,7 @@ echo<<<HTML
         <legend>S Grid</legend>
         <div class="newslider" id="s_grid-slider"></div>
         <br/>
-        Value:   <input name="s_grid-value"
+        Value:   <input name="s_grid-value" type='number'
                         id="s_grid-value"
                         size='12'
                         value="100" />
@@ -883,7 +883,7 @@ echo<<<HTML
         <div class="newslider" id="k_grid-slider">
         </div>
         <br/>
-        Value:   <input name="k_grid-value"
+        Value:   <input name="k_grid-value" type='number'
                         id="k_grid-value"
                         size='12'
                         value="100" />
@@ -905,7 +905,7 @@ echo<<<HTML
         <legend>Constraints Parameter Grid</legend>
         <div class="newslider" id="p_grid-slider"></div>
         <br/>
-        Value:   <input name="p_grid-value"
+        Value:   <input name="p_grid-value" type='number'
                         id="p_grid-value"
                         size='12'
                         value="1000" />
@@ -927,7 +927,7 @@ echo<<<HTML
         <legend>Mutate Sigma</legend>
         <div class="newslider" id="mutate_sigma-slider"></div>
         <br/>
-        Value: <input name="mutate_sigma-value"
+        Value: <input name="mutate_sigma-value" type='number' step='any'
                       id="mutate_sigma-value"
                       size='12'
                       value="0" />
@@ -950,7 +950,7 @@ echo<<<HTML
         <div class="newslider" id="mutate_s-slider">
         </div>
         <br/>
-        Value:   <input name="mutate_s-value"
+        Value:   <input name="mutate_s-value" type='number'
                         id="mutate_s-value"
                         size='12'
                         value="20" />
@@ -972,7 +972,7 @@ echo<<<HTML
         <legend>Mutate k</legend>
         <div class="newslider" id="mutate_k-slider"></div>
         <br/>
-        Value:   <input name="mutate_k-value"
+        Value:   <input name="mutate_k-value" type='number'
                         id="mutate_k-value"
                         size='12'
                         value="20" />
@@ -995,7 +995,7 @@ echo<<<HTML
         <div class="newslider" id="mutate_sk-slider">
         </div>
         <br/>
-        Value:   <input name="mutate_sk-value"
+        Value:   <input name="mutate_sk-value" type='number'
                         id="mutate_sk-value"
                         size='12'
                         value="20" />
@@ -1069,18 +1069,18 @@ echo<<<HTML
     </fieldset>
     <fieldset class='option_value'>
       <legend>X - Y - Z Ranges / Value</legend>
-      <input type="text" value="1" name="x_min"/> X Minimum<br/>
-      <input type="text" value="10" name="x_max"/> X Maximum<br/>
-      <input type="text" value="1" name="y_min"/> Y Minimum<br/>
-      <input type="text" value="4" name="y_max"/> Y Maximum<br/>
-      <input type="text" value="0" name="z_value"/> Z Value / Coefficients (Z=0 -> dataset vbar)<br/>
+      <input type="number" step="any" value="1" name="x_min"/> X Minimum<br/>
+      <input type="number" step="any" value="10" name="x_max"/> X Maximum<br/>
+      <input type="number" step="any" value="1" name="y_min"/> Y Minimum<br/>
+      <input type="number" step="any" value="4" name="y_max"/> Y Maximum<br/>
+      <input type="number" step="any" value="0" name="z_value"/> Z Value / Coefficients (Z=0 -> dataset vbar)<br/>
     </fieldset>
     <div style="display:block" id="mag3">
     <fieldset name='vars_count' id='vars_count'>
       <legend>Variations Count</legend>
         <div class='newslider' id='varcount-slider'></div>
         <br />
-        Value:   <input name='vars_count' 
+        Value:   <input name='vars_count' type='number'
                         id='varcount_points'
                         size='12'
                         value='10' />
@@ -1097,7 +1097,7 @@ echo<<<HTML
       <legend>Variations Count (HL)</legend>
         <div class='newslider' id='hlvcount-slider'></div>
         <br />
-        Value:   <input name='hl_vars_count' 
+        Value:   <input name='hl_vars_count' type='number'
                         id='hlvcount_points'
                         size='12'
                         value='100' />
@@ -1113,7 +1113,7 @@ echo<<<HTML
       <legend>Grid Fit Iterations</legend>
         <div class='newslider' id='gfititer-slider'></div>
         <br />
-        Value:   <input name='gfit_iterations' 
+        Value:   <input name='gfit_iterations' type='number'
                         id='gfit_iterations'
                         size='12'
                         value='3' />
@@ -1137,7 +1137,7 @@ echo<<<HTML
       <legend>Curve Resolution Points</legend>
         <div class='newslider' id='curvpoint-slider'></div>
         <br />
-        Value:   <input name='curves_points' 
+        Value:   <input name='curves_points' type='number'
                         id='curves_points'
                         size='12'
                         value='200' />
@@ -1158,7 +1158,7 @@ echo<<<HTML
                    value="2" />&nbsp; On (auto-computed alpha)<br/>
       <div style="display:none" id="mag5">
         <br/>
-        <input type="text" name="tikreg_alpha" value="0.275" size='6'/>&nbsp;&nbsp; Regularization Alpha Parameter<br/>
+        <input type="number" step="any" name="tikreg_alpha" value="0.275" size='6'/>&nbsp;&nbsp; Regularization Alpha Parameter<br/>
       </div>
     </fieldset>
 HTML;
