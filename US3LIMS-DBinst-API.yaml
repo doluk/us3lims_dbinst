@@ -41,7 +41,7 @@ paths:
                 $ref: '#/components/schemas/Experiment'
         404:
           description: Experiment not found
-  /experiments/{experimentID}/hpcanalysisrequests:
+  /experiments/{experimentID}/hpcrequests:
     get:
       tags:
         - Experiments
@@ -71,7 +71,7 @@ paths:
   /experiments/search:
     get:
       tags:
-        - Experiment
+        - Experiments
         - Search
       description: Search for experiments
       parameters:
@@ -215,6 +215,60 @@ paths:
                   $ref: '#/components/schemas/RawData'
         500:
           description: Internal server error
+  /rawdata/{rawDataID}/models:
+    get:
+      tags:
+        - RawData
+        - Models
+      description: Get a list of all models for an rawdataset
+      parameters:
+        - name: rawDataID
+          in: path
+          description: ID of rawdata to return models for
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: A list of models
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Model'
+        404:
+          description: RawData not found
+        500:
+          description: Internal server error
+  /rawdata/{rawDataID}/hpcrequests:
+    get:
+      tags:
+        - RawData
+        - HPCRequests
+      description: Get a list of all HPC analysis requests for a raw data
+      parameters:
+        - name: rawDataID
+          in: path
+          description: ID of raw dataset to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: A list of HPC analysis requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HPCAnalysisRequest'
+        404:
+          description: RawData not found
+        500:
+          description: Internal server error
   /edits/{editID}:
     get:
       tags:
@@ -260,6 +314,33 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Model'
+        404:
+          description: Edit not found
+        500:
+          description: Internal server error
+  /edits/{editID}/hpcrequests:
+    get:
+      tags:
+        - Edits
+        - HPCRequests
+      description: Get a list of all HPC analysis requests for an edit
+      parameters:
+        - name: editID
+          in: path
+          description: ID of the edit to return hpc analysis requests for
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: A list of HPC analysis requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HPCAnalysisRequest'
         404:
           description: Edit not found
         500:
@@ -379,6 +460,113 @@ paths:
             description: Invalid request
           500:
             description: Internal server error
+  /persons:
+    get:
+      tags:
+          - Person
+      description: Get a list of all persons
+      responses:
+        200:
+          description: A list of persons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Person'
+  /persons/{personID}:
+    get:
+      tags:
+          - Person
+      description: Get a person by ID
+      parameters:
+        - name: personID
+          in: path
+          description: ID of person to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: A person
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        404:
+          description: Person not found
+  /persons/me:
+    get:
+      tags:
+          - Person
+      description: Get the current person
+      responses:
+        200:
+          description: The current person
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        404:
+          description: Person not found
+  /persons/search:
+    get:
+      tags:
+          - Person
+          - Search
+      description: Search for persons
+      parameters:
+        - name: email
+          in: query
+          description: Email of person to search for
+          required: false
+          schema:
+            type: string
+        - name: firstName
+          in: query
+          description: First name of person to search for
+          required: false
+          schema:
+            type: string
+        - name: lastName
+          in: query
+          description: Last name of person to search for
+          required: false
+          schema:
+            type: string
+        - name: username
+          in: query
+          description: Username of person to search for
+          required: false
+          schema:
+            type: string
+        - name: personID
+          in: query
+          description: personID of person to search for
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: personGUID
+          in: query
+          description: personGUID of person to search for
+          required: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: A list of persons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Person'
+        404:
+          description: No persons found
+        500:
+          description: Internal server error
 
   
 components:
@@ -448,7 +636,7 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/RawData'
-          hpcanalysisrequests:
+          hpcrequests:
             type: array
             items:
               $ref: '#/components/schemas/HPCAnalysisRequest'
@@ -712,42 +900,54 @@ components:
           k_min:
               type: number
               format: float
+              description: This is called ff0_min in the US3 LIMS
           k_max:
               type: number
               format: float
+              description: This is called ff0_max in the US3 LIMS
           k_grid_points:
               type: integer
               format: int64
+              description: This is called ff0_points in the US3 LIMS
           mc_iter:
               type: integer
               format: int64
+              description: Number of Monte Carlo iterations
           max_iterations:
               type: integer
               format: int64
               default: 10
+              description: Maximum number of iterations
           iterative:
               type: boolean
               default: false
+              description: Whether to use iterative fitting
           req_mgroupcount:
               type: integer
               format: int64
               default: 1
+              description: Number of analysis mpi groups (each group has 1 master and n slaves)
           ti_noise:
             type: boolean
             default: false
+            description: Fit the time-invariant noise
           ri_noise:
             type: boolean
             default: false
+            description: Fit the radial-invariant noise
           fit_mb:
             $ref: '#/components/schemas/MeniscusBottomFitType'
+            description: Whether to fit the meniscus and/or bottom
           fit_mb_range:
             type: number
             format: float
             default: 0.03
+            description: Range of the meniscus and bottom fit
           fit_mb_points:
             type: integer
             format: int64
             default: 1
+            description: Number of points to fit for the meniscus and bottom in the range
           custom_grid_id:
             type: integer
             format: int64
@@ -838,11 +1038,57 @@ components:
               type: integer
               format: int64
               description: ID of the data owner in case you submit on behalf of someone else
-          submitter_id:
-              type: integer
-              format: int64
           HPCAnalysisMethod:
               $ref: '#/components/schemas/HPCAnalysisMethod'
+
+
+      Person:
+        type: object
+        required:
+          - personID
+          - personGUID
+          - email
+          - firstName
+          - lastName
+          - activated
+        properties:
+            personID:
+                type: integer
+                format: int64
+            personGUID:
+                type: string
+            email:
+                type: string
+            firstName:
+                type: string
+            lastName:
+                type: string
+            activated:
+                type: boolean
+            username:
+                type: string
+            advancedLevel:
+                type: boolean
+            userLevel:
+                type: integer
+                format: int64
+            clusterAuthorizations:
+                type: string
+            clusterNodes:
+                type: array
+                items:
+                    $ref: '#/components/schemas/ClusterNode'
+      ClusterNode:
+        type: object
+        properties:
+          name:
+              type: string
+          explicit_name:
+              type: string
+          short_name:
+              type: string
+          queue:
+              type: string
 
 
 

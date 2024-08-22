@@ -37,7 +37,7 @@ $endpointName = $endpoint ?? '';
 // Authenticate user by request header values
 $headers = apache_request_headers();
 $email = $headers['Us-Email'] ?? '';
-$password = $headers['Us-Password'] ?? '480qhxr6';
+$password = $headers['Us-Password'] ?? '';
 
 // Check if email and password are provided
 if (empty($email) || empty($password)) {
@@ -89,6 +89,7 @@ elseif ($count == 1) {
     $USER_DATA['loginID']      = $personID;  // This never changes, even if working on behalf of another
     $USER_DATA['firstname']    = $fname;
     $USER_DATA['lastname']     = $lname;
+    $USER_DATA['guid']         = $personGUID;
     $USER_DATA['first_name']    = $fname;
     $USER_DATA['last_name']     = $lname;
     $USER_DATA['phone']        = $phone;
@@ -168,7 +169,8 @@ switch ($method) {
     e.dateUpdated as udate, 
     e.runID, 
     e.projectID,
-    e.label FROM experiment e";
+    e.label,
+    e.operatorID FROM experiment e";
             if ($USER_DATA['userlevel'] < 3) {
                 $query_str .= " JOIN experimentPerson ep ON e.experimentID = ep.experimentID WHERE ep.personID = ?";
                 $query = $link->prepare($query_str);
@@ -182,14 +184,28 @@ switch ($method) {
             $result = $query->get_result()
             or die("Query failed : $query<br />\n" . mysqli_error($link));
             $experiments = [];
-            while (list($experimentID, $udate, $runID, $projectID, $label) = mysqli_fetch_array($result)) {
-                $experiments[] = array(
+            while (list($experimentID, $udate, $runID, $projectID, $label, $operatorID) = mysqli_fetch_array($result)) {
+                $experiment = array(
                     'experimentID' => $experimentID,
                     'lastUpdated' => $udate,
                     'runID' => $runID,
                     'projectID' => $projectID,
-                    'label' => $label
+                    'label' => $label,
+                    'operatorID' => $operatorID
                 );
+                // get all associated persons
+                $query2  = $link->prepare("SELECT personID FROM experimentPerson WHERE experimentID = ?");
+                $query2->bind_param("i", $experimentID);
+                $query2->execute();
+                $result2 = $query2->get_result();
+                $persons = [];
+                while ($row2 = mysqli_fetch_array($result2)) {
+                    $persons[] = $row2['personID'];
+                }
+                $experiment['persons'] = $persons;
+                $query2->free_result();
+                $query2->close();
+                $experiments[] = $experiment;
             }
             $query->free_result();
             $query->close();
@@ -271,6 +287,18 @@ switch ($method) {
             }
             $query->free_result();
             $query->close();
+            // get all associated persons
+            $query2  = $link->prepare("SELECT personID FROM experimentPerson WHERE experimentID = ?");
+            $query2->bind_param("i", $experimentID);
+            $query2->execute();
+            $result2 = $query2->get_result();
+            $persons = [];
+            while ($row2 = mysqli_fetch_array($result2)) {
+                $persons[] = $row2['personID'];
+            }
+            $experiment['persons'] = $persons;
+            $query2->free_result();
+            $query2->close();
             // get connected raw data
             $query  = $link->prepare("SELECT r.rawDataID, r.label, r.filename, 
             r.comment, TRIM(TRAILING CHAR(0x00) FROM CONVERT (substr(data from 27 for 240) USING utf8)) as description
@@ -295,7 +323,7 @@ switch ($method) {
             echo json_encode($experiment);
         }
         // GET HPCAnalysisRequest for experiment
-        elseif (preg_match('/^\/experiments\/(\d+)\/hpcanalysisrequests$/', $endpointName, $matches)) {
+        elseif (preg_match('/^\/experiments\/(\d+)\/hpcrequests$/', $endpointName, $matches)) {
             // Get a specific experiment by ID
             $experimentID = $matches[1];
             $query_str  = "SELECT distinct e.experimentID,
@@ -354,9 +382,9 @@ switch ($method) {
             $query->bind_param("i", $experimentID);
             $query->execute();
             $result = $query->get_result();
-            $hpcanalysisrequests = [];
+            $hpcrequests = [];
             while (list($HPCAnalysisRequestID, $investigatorGUID, $submitterGUID) = mysqli_fetch_array($result)) {
-                $hpcanalysisrequests[] = array(
+                $hpcrequests[] = array(
                     'HPCAnalysisRequestID' => $HPCAnalysisRequestID,
                     'investigatorGUID' => $investigatorGUID,
                     'submitterGUID' => $submitterGUID
@@ -364,7 +392,7 @@ switch ($method) {
             }
             $query->free_result();
             $query->close();
-            echo json_encode($hpcanalysisrequests);
+            echo json_encode($hpcrequests);
         }
         // Search experiments
         elseif (str_starts_with($endpointName, '/experiments/search')) {
@@ -425,6 +453,264 @@ switch ($method) {
             $query->free_result();
             $query->close();
             echo json_encode($experiments);
+        }
+        // Get persons
+        elseif ($endpointName === '/persons') {
+            // Get all persons
+            $query_str = 'SELECT personID, personGUID, fname, lname, email, username, activated, userlevel, 
+       advancelevel, clusterAuthorizations FROM people';
+            $query_params = [];
+            $query_params_type = '';
+            if ( $USER_DATA['userlevel'] < 3 ) {
+                $query_str .= " WHERE personID = ?";
+                $query_params[] = $USER_DATA['id'];
+                $query_params_type = 'i';
+            }
+            $query = $link->prepare($query_str);
+            $query->bind_param($query_params_type, ...$query_params);
+            $query->execute();
+            $result = $query->get_result()
+            or die("Query failed : $query<br />\n" . mysqli_error($link));
+            $persons = [];
+            while ($row = mysqli_fetch_array($result)) {
+                $persons[] = array(
+                    'personID' => $row['personID'],
+                    'personGUID' => $row['personGUID'],
+                    'firstName' => $row['fname'],
+                    'lastName' => $row['lname'],
+                    'email' => $row['email'],
+                    'username' => $row['username'],
+                    'activated' => (bool)$row['activated'],
+                    'userLevel' => $row['userlevel'],
+                    'advancedLevel' => $row['advancelevel'],
+                    'clusterAuthorizations' => $row['clusterAuthorizations']
+                );
+            }
+            $query->free_result();
+            $query->close();
+            echo json_encode($persons);
+        }
+        // Get person details
+        elseif ( preg_match('/^\/persons\/(\d+)$/', $endpointName, $matches) ) {
+            // Get a specific person by ID
+            $personID = (int)$matches[1];
+            if ($USER_DATA['userlevel'] < 3 && $personID != $USER_DATA['id']) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Permission denied']);
+                exit();
+            }
+            $query = $link->prepare("SELECT * FROM people WHERE personID = ?");
+            $query->bind_param("i", $personID);
+            $query->execute();
+            $result = $query->get_result()
+            or die("Query failed : $query<br />\n" . mysqli_error($link));
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Person with personID '. $personID .' not found']);
+                exit();
+            }
+            $user_data = array();
+            while ($row = mysqli_fetch_array($result)) {
+                $user_data['personID'] = $row['personID'];
+                $user_data['personGUID'] = $row['personGUID'];
+                $user_data['firstName'] = $row['fname'];
+                $user_data['lastName'] = $row['lname'];
+                $user_data['email'] = $row['email'];
+                $user_data['username'] = $row['username'];
+                if ( $row['activated'] == 1) {
+                    $user_data['activated'] = true;
+                }
+                else {
+                    $user_data['activated'] = false;
+                }
+                $user_data['userLevel'] = $row['userlevel'];
+                if ( !$user_data['activated'] || $user_data['userLevel'] < 2 )
+                {
+                    $user_data['advancedLevel'] = 0;
+                    $user_data['clusterAuthorizations'] = '';
+                    $user_data['clusterNodes'] = [];
+                    break;
+                }
+
+                $user_data['advancedLevel'] = $row['advancelevel'];
+
+                $user_data['clusterAuthorizations'] = $row['clusterAuthorizations'];
+                $clusterAuth = array();
+                $clusterAuth = explode(":", $clusterAuthorizations );
+                // construct available cluster nodes
+                global $clusters;
+                global $org_site;
+                global $global_cluster_details;
+                $clusterNodes = array();
+                if ( $user_data['userLevel'] > 3 || count($clusterAuth) > 0 ) {
+                    foreach ( $clusters as $cluster )
+                    {
+                        if (
+                            in_array($cluster->short_name, $clusterAuth ) &&
+                            array_key_exists($cluster->short_name, $global_cluster_details )
+                        ) {
+                            $p_cluster = array();
+                            $clname = $cluster->name;
+                            if ( preg_match( '/localhost/', $clname ) )
+                            {  // Form local cluster name
+                                $parts  = explode( "/", $org_site );
+                                $lohost = $parts[ 0 ];
+                                $clname = preg_replace( '/uslims3/', $cluster->short_name, $lohost );
+                            }
+                            $p_cluster['name'] = $cluster->name;
+                            $p_cluster['explicit_name'] = $clname;
+                            $p_cluster['short_name'] = $cluster->short_name;
+                            $p_cluster['queue'] = $cluster->queue;
+                            $clusterNodes[] = $p_cluster;
+                        }
+                    }
+                }
+                $user_data['clusterNodes'] = $clusterNodes;
+            }
+            $query->free_result();
+            $query->close();
+            echo json_encode($user_data);
+        }
+        // Get personal information
+        elseif ($endpointName === '/persons/me') {
+            $personID = (int)$USER_DATA['id'];
+            $query = $link->prepare("SELECT * FROM people WHERE personID = ?");
+            $query->bind_param("i", $personID);
+            $query->execute();
+            $result = $query->get_result()
+            or die("Query failed : $query<br />\n" . mysqli_error($link));
+            $user_data = array();
+            while ($row = mysqli_fetch_array($result)) {
+                $user_data['personID'] = $row['personID'];
+                $user_data['personGUID'] = $row['personGUID'];
+                $user_data['firstName'] = $row['fname'];
+                $user_data['lastName'] = $row['lname'];
+                $user_data['email'] = $row['email'];
+                $user_data['username'] = $row['username'];
+                if ( $row['activated'] == 1) {
+                    $user_data['activated'] = true;
+                }
+                else {
+                    $user_data['activated'] = false;
+                }
+                $user_data['userLevel'] = $row['userlevel'];
+                if ( !$user_data['activated'] || $user_data['userLevel'] < 2 )
+                {
+                    $user_data['advancedLevel'] = 0;
+                    $user_data['clusterAuthorizations'] = '';
+                    $user_data['clusterNodes'] = [];
+                    break;
+                }
+
+                $user_data['advancedLevel'] = $row['advancelevel'];
+
+                $user_data['clusterAuthorizations'] = $row['clusterAuthorizations'];
+                $clusterAuth = array();
+                $clusterAuth = explode(":", $clusterAuthorizations );
+                // construct available cluster nodes
+                global $clusters;
+                global $org_site;
+                global $global_cluster_details;
+                $clusterNodes = array();
+                if ( $user_data['userLevel'] > 3 || count($clusterAuth) > 0 ) {
+                    foreach ( $clusters as $cluster )
+                    {
+                        if (
+                            in_array($cluster->short_name, $clusterAuth ) &&
+                            array_key_exists($cluster->short_name, $global_cluster_details )
+                        ) {
+                            $p_cluster = array();
+                            $clname = $cluster->name;
+                            if ( preg_match( '/localhost/', $clname ) )
+                            {  // Form local cluster name
+                                $parts  = explode( "/", $org_site );
+                                $lohost = $parts[ 0 ];
+                                $clname = preg_replace( '/uslims3/', $cluster->short_name, $lohost );
+                            }
+                            $p_cluster['name'] = $cluster->name;
+                            $p_cluster['explicit_name'] = $clname;
+                            $p_cluster['short_name'] = $cluster->short_name;
+                            $p_cluster['queue'] = $cluster->queue;
+                            $clusterNodes[] = $p_cluster;
+                        }
+                    }
+                }
+                $user_data['clusterNodes'] = $clusterNodes;
+            }
+            $query->free_result();
+            $query->close();
+            echo json_encode($user_data);
+        }
+        elseif (str_starts_with($endpointName, '/persons/search')) {
+            // Filter persons by query parameters
+            // Get all persons
+            $query_str = 'SELECT personID, personGUID, fname, lname, email, username, activated, userlevel, 
+       advancelevel, clusterAuthorizations FROM people';
+            $query_params = [];
+            $query_params_type = '';
+            if ( $USER_DATA['userlevel'] < 3 ) {
+                $query_str .= " WHERE personID = ?";
+                $query_params[] = $USER_DATA['id'];
+                $query_params_type = 'i';
+            }
+            if (isset($params['personID']) && is_numeric($params['personID'])) {
+                $query .= " AND personID = ?";
+                $query_params[] = (int)$params['personID'];
+                $query_params_type .= 'i';
+            }
+            if (isset($params['firstName'])) {
+                $query .= " AND fname like ?";
+                $query_params[] = '%' . $params['firstName'] . '%';
+                $query_params_type .= 's';
+            }
+            if (isset($params['lastName'])) {
+                $query .= " AND lname like ?";
+                $query_params[] = '%' . $params['lastName'] . '%';
+                $query_params_type .= 's';
+            }
+            if (isset($params['username'])) {
+                $query .= " AND username like ?";
+                $query_params[] = '%' . $params['username'] . '%';
+                $query_params_type .= 's';
+            }
+            if (isset($params['email'])) {
+                $query .= " AND email like ?";
+                $query_params[] = '%' . $params['email'] . '%';
+                $query_params_type .= 's';
+            }
+            if (isset($params['personGUID'])) {
+                $query .= " AND personGUID = ";
+                $query_params[] = $params['personGUID'];
+                $query_params_type .= 's';
+            }
+            $query = $link->prepare($query_str);
+            $query->bind_param($query_params_type, ...$query_params);
+            $query->execute();
+            $result = $query->get_result()
+            or die("Query failed : $query<br />\n" . mysqli_error($link));
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'No persons found']);
+                exit();
+            }
+            $persons = [];
+            while ($row = mysqli_fetch_array($result)) {
+                $persons[] = array(
+                    'personID' => $row['personID'],
+                    'personGUID' => $row['personGUID'],
+                    'firstName' => $row['fname'],
+                    'lastName' => $row['lname'],
+                    'email' => $row['email'],
+                    'username' => $row['username'],
+                    'activated' => (bool)$row['activated'],
+                    'userLevel' => $row['userlevel'],
+                    'advancedLevel' => $row['advancelevel'],
+                    'clusterAuthorizations' => $row['clusterAuthorizations']
+                );
+            }
+            $query->free_result();
+            $query->close();
+            echo json_encode($persons);
         }
         // Get all raw data
         elseif ($endpointName === '/rawdata') {
@@ -515,7 +801,6 @@ switch ($method) {
             }
             $query->free_result();
             $query->close();
-            echo json_encode($rawdata);
             # get edit ids
             $query = $link->prepare("SELECT editedDataID, label, filename FROM editedData WHERE rawDataID = ?");
             $query->bind_param("i", $rawDataID);
@@ -536,6 +821,157 @@ switch ($method) {
 
 
             echo json_encode($rawdata);
+        }
+        // GET HPCAnalysisRequest for raw data
+        elseif (preg_match('/^\/rawdata\/(\d+)\/hpcrequests$/', $endpointName, $matches)) {
+            // Get a specific experiment by ID
+            $experimentID = $matches[1];
+            $query_str  = "SELECT distinct e.experimentID,
+            e.dateUpdated as udate, projectID, runID, label, instrumentID, operatorID, rotorID, rotorCalibrationID,
+             experimentGUID, type, runType, dateBegin, runTemp, comment
+             FROM rawData r join experiment e on r.experimentID = e.experimentID join experimentPerson ep on ep.experimentID = e.experimentID  
+             WHERE r.rawDataID = ?";
+            if ($USER_DATA['userlevel'] < 3) {
+                $query_str .= " AND ep.personID = ?";
+                $query = $link->prepare($query_str);
+                $query->bind_param("ii", $USER_DATA['id'],$experimentID);
+            }
+            else
+            {
+                $query = $link->prepare($query_str);
+                $query->bind_param("i", $experimentID);
+            }
+            $query->execute();
+            $result = $query->get_result()
+            or die("Query failed : $query<br />\n" . mysqli_error($link));
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Raw Data not found']);
+                exit();
+            }
+            elseif ($result->num_rows != 1) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Multiple rawdata found with the same ID']);
+                exit();
+            }
+            $query->free_result();
+            $query->close();
+            // get connected HPCAnalysisRequest
+            $query = $link->prepare("SELECT HPCAnalysisRequestID,
+       investigatorGUID, submitterGUID FROM HPCAnalysisRequest hpc 
+           join HPCDataset hd on hpc.HPCAnalysisRequestID = hd.HPCAnalysisRequestID
+                                       JOIN editedData ed on hd.editedDataID = ed.editedDataID
+            WHERE ed.rawDataID = ?");
+            $query->bind_param("i", $experimentID);
+            $query->execute();
+            $result = $query->get_result();
+            $hpcrequests = [];
+            while (list($HPCAnalysisRequestID, $investigatorGUID, $submitterGUID) = mysqli_fetch_array($result)) {
+                $hpcrequests[] = array(
+                    'HPCAnalysisRequestID' => $HPCAnalysisRequestID,
+                    'investigatorGUID' => $investigatorGUID,
+                    'submitterGUID' => $submitterGUID
+                );
+            }
+            $query->free_result();
+            $query->close();
+            echo json_encode($hpcrequests);
+        }
+        // Get rawdata models
+        elseif (preg_match('/^\/rawdata\/(\d+)\/models$/', $endpointName, $matches)) {
+            $editedDataID = $matches[1];
+            // check if user has access to this edit
+            $query  = "SELECT distinct
+    e.editedDataID, e.rawDataID, e.editGUID, e.label, e.filename, e.comment, e.lastUpdated
+            from editedData e 
+            join rawData r on e.rawDataID = r.rawDataID
+            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            WHERE e.rawDataID = ?";
+            $query_params = [$editedDataID];
+            $query_params_type = 'i';
+            if ($USER_DATA['userlevel'] < 3) {
+                $query .= " AND ep.personID = ?";
+                $query_params[] = $USER_DATA['id'];
+                $query_params_type .= 'i';
+            }
+            $query = $link->prepare($query);
+            $query->bind_param($query_params_type, ...$query_params);
+            $query->execute();
+            $result = $query->get_result();
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Edit not found']);
+                exit();
+            }
+            elseif ($result->num_rows != 1) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Multiple edits found with the same ID']);
+                exit();
+            }
+            $edit = [];
+            while (list($editID, $rawDataID, $editGUID, $label, $filename, $comment, $lastUpdated) = mysqli_fetch_array($result)) {
+                $edit = array(
+                    'editedDataID' => $editID,
+                    'rawDataID' => $rawDataID,
+                    'editGUID' => $editGUID,
+                    'label' => $label,
+                    'filename' => $filename,
+                    'comment' => $comment,
+                    'lastUpdated' => $lastUpdated
+                );
+            }
+            $query->free_result();
+            $query->close();
+
+            // get models
+            $query  = $link->prepare("SELECT m.modelID, m.description, m.globalType, m.meniscus,
+       m.MCIteration, m.variance, m.lastUpdated, hpcar.HPCAnalysisRequestID
+            from model m
+            left outer join HPCAnalysisResultData hpcard on m.modelID = hpcard.resultID and hpcard.HPCAnalysisResultType = 'model'
+            LEFT OUTER JOIN HPCAnalysisResult hpcar on hpcard.HPCAnalysisResultID = hpcar.HPCAnalysisResultID
+            WHERE m.editedDataID = ? order by m.lastUpdated desc");
+            $query->bind_param("i", $editedDataID);
+            $query->execute();
+            $result = $query->get_result();
+            $models = [];
+            while (list($modelID, $description, $globalType, $mensicus, $mc_iter, $var, $lastUpdated, $hpcID) = mysqli_fetch_array($result))
+            {
+                $model = array(
+                    'modelID' => $modelID,
+                    'description' => $description,
+                    'globalType' => $globalType,
+                    'meniscus' => $mensicus,
+                    'MCIteration' => $mc_iter,
+                    'variance' => $var,
+                    'lastUpdated' => $lastUpdated,
+                    'HPCAnalysisRequestID' => $hpcID
+                );
+                // get latest noise ids
+                $query_noise  = $link->prepare("SELECT distinct 
+    n.noiseID, n.noiseType, n.timeEntered, n.modelID
+            from noise n
+            WHERE n.modelID = ? ORDER BY n.timeEntered desc");
+                $query_noise->bind_param("i", $model['modelID']);
+                $query_noise->execute();
+                $result_noise = $query_noise->get_result();
+                if ($result_noise->num_rows > 0) {
+                    while (list($noiseID, $noiseType, $timeEntered, $modelID) = mysqli_fetch_array($result_noise)) {
+                        if (isset($noiseType)) {
+                            $model[$noiseType] = array(
+                                'noiseID' => $noiseID,
+                                'noiseType' => $noiseType,
+                                'timeEntered' => $timeEntered
+                            );
+                        }
+                    }
+                }
+                $query_noise->free_result();
+                $query_noise->close();
+                $models[] = $model;
+            }
+            $query->free_result();
+            $query->close();
+            echo json_encode($models);
         }
         // Search raw data
         elseif (str_starts_with($endpointName, '/rawdata/search')) {
@@ -739,6 +1175,63 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
             $query->close();
             $edit['hpcanalysisrequest'] = $hpcanalysisrequest;
             echo json_encode($edit);
+        }
+        // GET HPCAnalysisRequest for edit
+        elseif (preg_match('/^\/edits\/(\d+)\/hpcrequests$/', $endpointName, $matches)) {
+            // Get a specific experiment by ID
+            $experimentID = $matches[1];
+            $query_str  = "SELECT distinct e.experimentID,
+            e.dateUpdated as udate, projectID, runID, label, instrumentID, operatorID, rotorID, rotorCalibrationID,
+             experimentGUID, type, runType, dateBegin, runTemp, comment
+             FROM editedData edits join rawData r on r.rawDataID = edits.rawDataID 
+                 join experiment e on r.experimentID = e.experimentID 
+                 join experimentPerson ep on ep.experimentID = e.experimentID  
+             WHERE edits.editedDataID = ?";
+            if ($USER_DATA['userlevel'] < 3) {
+                $query_str .= " AND ep.personID = ?";
+                $query = $link->prepare($query_str);
+                $query->bind_param("ii", $USER_DATA['id'],$experimentID);
+            }
+            else
+            {
+                $query = $link->prepare($query_str);
+                $query->bind_param("i", $experimentID);
+            }
+            $query->execute();
+            $result = $query->get_result()
+            or die("Query failed : $query<br />\n" . mysqli_error($link));
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Edit not found']);
+                exit();
+            }
+            elseif ($result->num_rows != 1) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Multiple edits found with the same ID']);
+                exit();
+            }
+            $query->free_result();
+            $query->close();
+            // get connected HPCAnalysisRequest
+            $query = $link->prepare("SELECT HPCAnalysisRequestID,
+       investigatorGUID, submitterGUID FROM HPCAnalysisRequest hpc 
+           join HPCDataset hd on hpc.HPCAnalysisRequestID = hd.HPCAnalysisRequestID
+                                       JOIN editedData ed on hd.editedDataID = ed.editedDataID
+            WHERE ed.rawDataID = ?");
+            $query->bind_param("i", $experimentID);
+            $query->execute();
+            $result = $query->get_result();
+            $hpcrequests = [];
+            while (list($HPCAnalysisRequestID, $investigatorGUID, $submitterGUID) = mysqli_fetch_array($result)) {
+                $hpcrequests[] = array(
+                    'HPCAnalysisRequestID' => $HPCAnalysisRequestID,
+                    'investigatorGUID' => $investigatorGUID,
+                    'submitterGUID' => $submitterGUID
+                );
+            }
+            $query->free_result();
+            $query->close();
+            echo json_encode($hpcrequests);
         }
         // Get edit models
         elseif (preg_match('/^\/edits\/(\d+)\/models$/', $endpointName, $matches)) {
