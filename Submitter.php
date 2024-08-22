@@ -194,7 +194,7 @@ abstract class Submitter
         if ( $noise_id == -1 )
         {
             // get latest noise date for this edit
-            $query = $link->prepare("SELECT max(timeEntered) as timeEntered from noise n where editedDataID = ?");
+            $query = $link->prepare("SELECT unix_timestamp(max(timeEntered)) as timeEntered from noise n where editedDataID = ?");
             $query->bind_param('i', $edit_id);
             $query->execute();
             $result = $query->get_result();
@@ -750,8 +750,7 @@ abstract class Submitter
             "AND cell.abstractCenterpieceID = abstractCenterpiece.abstractCenterpieceID " .
             "AND abstractCenterpiece.abstractCenterpieceID = abstractChannel.abstractCenterpieceID ".
             "AND abstractChannel.name = '$channel' ";
-        $result = mysqli_query( $link, $query )
-        or die( "Query failed : $query<br />" . mysqli_error($link));
+        $result = mysqli_query( $link, $query );
         if (mysqli_num_rows( $result ) < 1 ){
             $query  = "SELECT shape, bottom, angle, pathLength, width " .
                 "FROM rawData, cell, abstractCenterpiece " .
