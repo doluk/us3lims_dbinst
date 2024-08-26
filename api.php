@@ -1418,7 +1418,7 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
             JOIN HPCDataset d on h.HPCAnalysisRequestID = d.HPCAnalysisRequestID
             JOIN HPCAnalysisResult r on h.HPCAnalysisRequestID = r.HPCAnalysisRequestID
             JOIN experimentPerson ep on h.experimentID = ep.experimentID
-            WHERE (ep.personID = ? or ? > 2)AND h.HPCAnalysisRequestID = ?");
+            WHERE (ep.personID = ? or ? > 2) AND h.HPCAnalysisRequestID = ?");
             $query->bind_param("iii", $USER_DATA['id'],$USER_DATA['userlevel'], $HPCAnalysisRequestID);
             $query->execute();
             $result = $query->get_result();
@@ -1451,9 +1451,56 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
             }
             $query->free_result();
             $query->close();
+            // get datasets
+            $query  = $link->prepare("SELECT d.HPCDatasetID, d.editedDataID, d.HPCAnalysisRequestID, e.label, e.filename, e.rawDataID,
+d.simpoints, d.band_volume, d.radial_grid, d.time_grid
+            from HPCDataset d
+            join editedData e on d.editedDataID = e.editedDataID
+            WHERE d.HPCAnalysisRequestID = ?");
+            $query->bind_param("i", $hpcrequest['HPCAnalysisRequestID']);
+            $query->execute();
+            $result = $query->get_result();
+            $datasets = [];
+            while (list($HPCDatasetID, $editedDataID, $id, $label, $filename, $rawDataID, $simpoints, $b_vol, $rad, $tim) = mysqli_fetch_array($result)) {
+                $dataset = array(
+                    'HPCDatasetID' => $HPCDatasetID,
+                    'editedDataID' => $editedDataID,
+                    'rawDataID' => $rawDataID,
+                    'label' => $label,
+                    'filename' => $filename,
+                    'simpoints' => $simpoints,
+                    'band_volume' => $b_vol,
+                    'radial_grid' => $rad,
+                    'time_grid' => $tim
+                );
+                // get noise
+                $query_noise  = $link->prepare("SELECT n.noiseID, n.noiseType, n.modelID, n.description, n.editedDataID, timeEntered from HPCRequestData d join noise n on n.noiseID = d.noiseID where HPCDatasetID = ?");
+                $query_noise->bind_param("i", $dataset['HPCDatasetID']);
+                $query_noise->execute();
+                $result_noise = $query_noise->get_result();
+                $noises = [];
+                while (list($n_id, $n_t, $n_m, $n_d, $n_eid, $entered) = mysqli_fetch_array($result_noise)) {
+                    $noises[] = array(
+                        'noiseID' => $n_id,
+                        'noiseType' => $n_t,
+                        'modelID' => $n_m,
+                        'description' => $n_d,
+                        'editedDataID' => $n_eid,
+                        'timeEntered' => $entered
+                    );
+                }
+                $dataset['noises'] = $noises;
+                $query_noise->free_result();
+                $query_noise->close();
+                $datasets[] = $dataset;
+            }
+            $query->free_result();
+            $query->close();
+            $hpcrequest['datasets'] = $datasets;
             // get results
-            $query  = $link->prepare("SELECT * from HPCAnalysisResult r join HPCAnalysisResultData d on d.HPCAnalysisResultID = r.HPCAnalysisResultID
-            where r.HPCAnalysisResultID = ?");
+            $query  = $link->prepare("SELECT * from HPCAnalysisResult r 
+    join HPCAnalysisResultData d on d.HPCAnalysisResultID = r.HPCAnalysisResultID
+            where r.HPCAnalysisRequestID = ?");
             $query->bind_param("i", $hpcrequest['HPCAnalysisRequestID']);
             $query->execute();
             $result = $query->get_result();

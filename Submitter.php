@@ -220,9 +220,13 @@ abstract class Submitter
         $query->bind_param($querytypes, ...$queryparams);
         $query->execute();
         $result = $query->get_result();
-        if ( $result->num_rows == 0 )
+        if ( $result->num_rows == 0 && $noise_id != -1)
         {
             return -3;
+        }
+        elseif ( $result->num_rows == 0 )
+        {
+            return 0;
         }
         $row = $result->fetch_array();
         $n_id = $row['noiseID'];
