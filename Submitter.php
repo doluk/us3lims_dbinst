@@ -224,7 +224,7 @@ abstract class Submitter
         {
             return -3;
         }
-        elseif ( $result->num_rows == 0 )
+        elseif ( $result->num_rows == 0 && $noise_id == -1)
         {
             return 0;
         }
@@ -1902,7 +1902,7 @@ class Submitter_2DSA extends Submitter
                 $save_cwd = getcwd();         // So we can come back to the current
                 // working directory later
 
-                foreach ( $filenames as $filename )
+                foreach ( $this->filenames as $filename )
                 {
 
 

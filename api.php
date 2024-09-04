@@ -467,7 +467,8 @@ switch ($method) {
                 $query_params_type = 'i';
             }
             $query = $link->prepare($query_str);
-            $query->bind_param($query_params_type, ...$query_params);
+            if (count($query_params) > 0)
+		$query->bind_param($query_params_type, ...$query_params);
             $query->execute();
             $result = $query->get_result()
             or die("Query failed : $query<br />\n" . mysqli_error($link));
