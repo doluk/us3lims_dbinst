@@ -1556,10 +1556,10 @@ d.simpoints, d.band_volume, d.radial_grid, d.time_grid
             $data['add_owner'] = ( isset($data['add_owner']) && $data['add_owner'] ) ? 1 : 0;
             // Get basic job parameter
             $dataset_count = count($data['datasets']);
-            $seperate_datasets = ( isset($data['separate_datasets']) && $data['separate_datasets'] ) ? 1 : 0;
+            $separate_datasets = ( isset($data['separate_datasets']) && $data['separate_datasets'] ) ? 1 : 0;
             $USER_DATA['dataset_count'] = $dataset_count;
             $USER_DATA['datasetCount'] = $dataset_count;
-            $USER_DATA['seperate_datasets'] = $seperate_datasets;
+            $USER_DATA['separate_datasets'] = $separate_datasets;
             $submitter = new Submitter_2DSA($USER_DATA, $data);
             $submitter->submit();
             $response = array();

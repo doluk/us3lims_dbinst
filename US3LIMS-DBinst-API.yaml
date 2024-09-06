@@ -953,7 +953,7 @@ components:
             format: int64
             default: 0
             description: ID of the custom grid, only used if radial_grid is Custom
-          sim_points:
+          simpoints:
             type: integer
             format: int64
             default: 100
@@ -988,10 +988,10 @@ components:
             format: int64
             description: ID of the ti noise data, -1 for latest noise, 0 for no noise
             default: -1
-          sim_points:
+          simpoints:
             type: integer
             format: int64
-            default: 100
+            default: 200
           band_volume:
             type: number
             format: float
@@ -1023,9 +1023,9 @@ components:
               type: string
               enum:
                 - global
-                - seperate
+                - separate
                 - composite
-              default: seperate
+              default: separate
           datasets:
               type: array
               items:

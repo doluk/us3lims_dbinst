@@ -601,12 +601,12 @@ abstract class Submitter
      *
      * This method constructs and stores an array of datasets based on the input values.
      * If the 'separate_datasets' value is greater than 0, it iterates over the 'datasets' input
-     * and constructs a triple from the edit values, including the 'sim_points' and 'band_volume'
+     * and constructs a triple from the edit values, including the 'simpoints' and 'band_volume'
      * values from either the corresponding dataset or the job parameters. If there is an error in
      * the edit data, it logs the error and skips to the next dataset. The constructed dataset is
      * then added to the datasets array.
      *
-     * If the 'separate_datasets' value is 0, it constructs a triple from the 'rawdata_id', 'ti_noise',
+     * If the 'separate_datasets' value is 0, it constructs a triple from the 'raw_data_id', 'ti_noise',
      * and 'ri_noise' input values and adds it as the first (and only) dataset in the datasets array.
      *
      * @return void
@@ -626,7 +626,7 @@ abstract class Submitter
             }
             else
             {
-                $editdata = $this->construct_triple_from_ra( $input_data['rawdata_id'],
+                $editdata = $this->construct_triple_from_ra( $input_data['raw_data_id'],
                     $input_data['ti_noise'],
                     $input_data['ri_noise'] );
             }
@@ -635,7 +635,7 @@ abstract class Submitter
                 elogrs($editdata['error']);
                 continue;
             }
-            $editdata['simpoints'] = $input_data['sim_points']??$this->input['job_parameters']['sim_points'];
+            $editdata['simpoints'] = $input_data['simpoints']??$this->input['job_parameters']['simpoints'];
             $editdata['band_volume'] = $input_data['band_volume']??$this->input['job_parameters']['band_volume'];
             $editdata['radial_grid'] = $this->parse_radial_grid( $input_data['radial_grid']??$this->input['job_parameters']['radial_grid'] );
             $editdata['time_grid'] = $this->parse_radial_grid( $input_data['time_grid']??$this->input['job_parameters']['time_grid'] );
@@ -755,7 +755,7 @@ abstract class Submitter
             "AND abstractCenterpiece.abstractCenterpieceID = abstractChannel.abstractCenterpieceID ".
             "AND abstractChannel.name = '$channel' ";
         $result = mysqli_query( $link, $query );
-        if (mysqli_num_rows( $result ) < 1 ){
+        if (is_bool($result) || mysqli_num_rows( $result ) < 1 ){
             $query  = "SELECT shape, bottom, angle, pathLength, width " .
                 "FROM rawData, cell, abstractCenterpiece " .
                 "WHERE rawData.rawDataID = $rawDataID " .
@@ -1077,7 +1077,7 @@ abstract class Submitter
             $query = "INSERT INTO HPCDataset SET " .
                 "HPCAnalysisRequestID = $HPCAnalysisRequestID,      " .
                 "editedDataID         = {$dataset['editedDataID']}, " .
-                "simpoints            = {$params['sim_points']},    " .
+                "simpoints            = {$params['simpoints']},    " .
                 "band_volume          = {$params['band_volume']},  " .
                 "radial_grid          = {$params['radial_grid']},  " .
                 "time_grid            = {$params['time_grid']},    " .
@@ -1777,7 +1777,6 @@ class Submitter_2DSA extends Submitter
                 {
                     $post['simpoints-value'] = $data['simpoints'];
                     $post['simpoints'] = $data['simpoints'];
-                    $post['sim_points'] = $data['simpoints'];
                 }
                 if (isset($data['band_volume']) && is_numeric($data['band_volume']) && $data['band_volume'] != -1)
                 {
@@ -2056,9 +2055,9 @@ HTML;
         $post['debug_text-value'] = $this->input['job_parameters']['debug_text']??'';
         $post['debug_level'] = $this->input['job_parameters']['debug_level']??0;
         $post['debug_text'] = $this->input['job_parameters']['debug_text']??'';
-        $post['simpoints-value'] = $this->input['job_parameters']['sim_points']??200;
+        $post['simpoints-value'] = $this->input['job_parameters']['simpoints']??200;
         $post['band_volume-value'] = $this->input['job_parameters']['band_volume']??0.001;
-        $post['simpoints'] = $this->input['job_parameters']['sim_points']??200;
+        $post['simpoints'] = $this->input['job_parameters']['simpoints']??200;
         $post['band_volume'] = $this->input['job_parameters']['band_volume']??0.001;
         $post['radial_grid'] = $this->parse_radial_grid($this->input['job_parameters']['radial_grid']??0);
         $post['time_grid'] = $this->parse_time_grid($this->input['job_parameters']['time_grid']??0);
