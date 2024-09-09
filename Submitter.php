@@ -818,20 +818,22 @@ abstract class Submitter
         $cosedcomponents = array();
         $query = "SELECT cosedComponentID, name, concentration, s_value, d_value, density, viscosity, overlaying, vbar " .
             "FROM buffercosedLink WHERE bufferID = $bufferID";
-        $result = mysqli_query( $link, $query )
-        or die( "Query failed : $query<br />" . mysqli_error($link));
-        while ( list( $id, $name, $conc, $s, $D, $dens, $visc, $overlay, $vbar ) = mysqli_fetch_array( $result ) )
-        {
-            $cosed['name']      = $name;
-            $cosed['id']        = $id;
-            $cosed['conc']      = $conc;
-            $cosed['s']         = $s;
-            $cosed['vbar']      = $vbar;
-            $cosed['D']         = $D;
-            $cosed['dens']      = $dens;
-            $cosed['visc']      = $visc;
-            $cosed['overlay']   = $overlay;
-            $cosedcomponents[]  = $cosed;
+        $result = mysqli_query( $link, $query );
+        if ( $result && mysqli_num_rows( $result ) > 0 ){
+            while ( list( $id, $name, $conc, $s, $D, $dens, $visc, $overlay, $vbar ) = mysqli_fetch_array( $result ) )
+            {
+                $cosed['name']      = $name;
+                $cosed['id']        = $id;
+                $cosed['conc']      = $conc;
+                $cosed['s']         = $s;
+                $cosed['vbar']      = $vbar;
+                $cosed['D']         = $D;
+                $cosed['dens']      = $dens;
+                $cosed['visc']      = $visc;
+                $cosed['overlay']   = $overlay;
+                $cosedcomponents[]  = $cosed;
+            }
+            $result->free();
         }
         // Save the simulation parameters looked up in the db
         $params['rotor_stretch']           = $rotor_stretch;
@@ -845,7 +847,9 @@ abstract class Submitter
         $params['compress']                = $compress;
         $params['manual' ]                 = $manual;
         $params['analytes']                = $analytes;
-        $params['cosedcomponents']         = $cosedcomponents;
+        if ( $cosedcomponents && count( $cosedcomponents ) > 0 ) {
+            $params['cosedcomponents'] = $cosedcomponents;
+        }
         $params['speedsteps']              = $speedsteps;
         $params['rawDataID']               = $rawDataID;
         $params['experimentID']            = $experID;
@@ -1348,7 +1352,7 @@ abstract class Submitter
             $xml->writeAttribute( 'density', $dataset['density'] );
             $xml->writeAttribute( 'viscosity', $dataset['viscosity'] );
             $xml->writeAttribute( 'manual', $dataset['manual'] );
-            foreach( $dataset['cosedcomponents'] as $cosed)
+            foreach( $dataset['cosedcomponents']??array() as $cosed)
             {
                 $xml->startElement('cosedcomponent');
                 $xml->writeAttribute('id', $cosed['id']);
@@ -2018,8 +2022,8 @@ HTML;
         $post['s_grid_points'] = $grid['grid_points_s'];
         $post['ff0_grid_points'] = $grid['grid_points_k'];
         $post['mc_iterations'] = $this->input['job_parameters']['mc_iter']??1;
-        $post['tinoise_option'] = (int)$this->input['job_parameters']['ti_noise']??0;
-        $post['rinoise_option'] = (int)$this->input['job_parameters']['ri_noise']??0;
+        $post['tinoise_option'] = (int)($this->input['job_parameters']['fit_ti_noise']??0);
+        $post['rinoise_option'] = (int)($this->input['job_parameters']['fit_ri_noise']??0);
 
         if ( !isset( $this->input['job_parameters']['fit_mb']) || $this->input['job_parameters']['fit_mb'] == 'None' )
         {
@@ -2046,7 +2050,7 @@ HTML;
             $post['meniscus_range'] = 0.0;
             $post['meniscus_points'] = 1;
         }
-        $post['iterations_option'] = (int)$this->input['job_parameters']['iterative']??0;
+        $post['iterations_option'] = (int)($this->input['job_parameters']['iterative']??0);
         $post['max_iterations'] = $this->input['job_parameters']['max_iterations']??10;
         if ($post['iterations_option'] == 0){
             $post['max_iterations'] = 1;

@@ -23,6 +23,26 @@ echo <<<HTML
         presets: [
           SwaggerUIBundle.presets.apis
         ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl,
+          // Custom plugin that replaces the server list with the current url
+          function() {
+            return {
+              statePlugins: {
+                spec: {
+                  wrapActions: {
+                    updateJsonSpec: function(oriAction, system) {
+                      return (spec) => {
+                            spec.servers = [{url: window.location.origin + window.location.pathname.replace('api-docs.php','api')}];
+                            return oriAction(spec)
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
       });
     };
   </script>

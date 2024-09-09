@@ -9,6 +9,49 @@ function remove_session()
         setcookie(session_name(), '', time()-42000, '/');
     session_destroy();
 }
+
+
+/**
+ * Parses the given radial grid identifier and returns the corresponding name or index.
+ *
+ * @param mixed $radGrid The radial grid identifier, which can be a string or numeric value.
+ * @return int|string Returns the corresponding name or index of the radial grid, or -1 if the identifier is not known.
+ */
+function parseRadialGrid($radGrid)
+{
+    $knownGrids = [
+        '0' => 'ASTFEM',
+        '1' => 'Claverie',
+        '2' => 'Moving Hat',
+        '3' => 'ASTFVM',
+        'ASTFEM' => 0,
+        'Claverie' => 1,
+        'Moving Hat' => 2,
+        'ASTFVM' => 3,
+    ];
+
+    return $knownGrids[(string)$radGrid] ??-1;
+}
+
+
+/**
+ * Parses the given time grid identifier and returns the corresponding name or index.
+ *
+ * @param mixed $time_grid The time grid identifier, which can be a string or numeric value.
+ * @return int|string Returns the corresponding name or index of the time grid, or -1 if the identifier is not known.
+ */
+function parseTimeGrid($time_grid)
+{
+    $knownGrids = [
+        '0' => 'AST',
+        '1' => 'Constant',
+        'AST' => 0,
+        'Constant' => 1
+    ];
+
+    return $knownGrids[(string)$time_grid] ??-1;
+}
+
 if (!function_exists('str_starts_with')) {
     function str_starts_with($haystack, $needle) {
         return substr($haystack, 0, strlen($needle)) === $needle;
@@ -823,6 +866,49 @@ switch ($method) {
 
             echo json_encode($rawdata);
         }
+        // Get raw data data
+        elseif (preg_match('/^\/rawdata\/(\d+)\/data$/', $endpointName, $matches)) {
+            // Get a specific raw data by ID
+            $rawDataID = $matches[1];
+            $query_params = [$rawDataID];
+            $query_params_type = 'i';
+            $query  = "SELECT distinct  r.rawDataID, r.data
+            from rawData r
+            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            WHERE r.rawDataID = ?";
+            if ($USER_DATA['userlevel'] < 3) {
+                $query .= " AND ep.personID = ?";
+                $query_params[] = $USER_DATA['id'];
+                $query_params_type .= 'i';
+            }
+            $query = $link->prepare($query);
+            $query->bind_param($query_params_type, ...$query_params);
+            $query->execute();
+            $result = $query->get_result()
+            or die("Query failed : $query<br />\n" . mysqli_error($link));
+
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Raw data not found']);
+                exit();
+            }
+            elseif ($result->num_rows != 1) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Multiple raw data found with the same ID']);
+                exit();
+            }
+            $rawdata = [];
+            while (list($rawID, $data) = mysqli_fetch_array($result)) {
+                $rawdata['dataID'] = $rawID;
+                $rawdata['data'] = $data;
+                $rawdata['dataType'] = 'RawData';
+                $rawdata['dataFormat'] = 'binary';
+            }
+            $result->free_result();
+            $query->free_result();
+            $query->close();
+            echo json_encode($rawdata);
+        }
         // GET HPCAnalysisRequest for raw data
         elseif (preg_match('/^\/rawdata\/(\d+)\/hpcrequests$/', $endpointName, $matches)) {
             // Get a specific experiment by ID
@@ -1177,13 +1263,57 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
             $edit['hpcanalysisrequest'] = $hpcanalysisrequest;
             echo json_encode($edit);
         }
+        // Get edit data
+        elseif (preg_match('/^\/edits\/(\d+)\/data$/', $endpointName, $matches)) {
+            $rawDataID = $matches[1];
+            $query  = "SELECT distinct
+    e.editedDataID, e.data
+            from editedData e 
+            join rawData r on e.rawDataID = r.rawDataID
+            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            WHERE e.editedDataID = ?";
+            $query_params = [$rawDataID];
+            $query_params_type = 'i';
+            if ($USER_DATA['userlevel'] < 3) {
+                $query .= " AND ep.personID = ?";
+                $query_params[] = $USER_DATA['id'];
+                $query_params_type .= 'i';
+            }
+            $query = $link->prepare($query);
+            $query->bind_param($query_params_type, ...$query_params);
+            $query->execute();
+            $result = $query->get_result()
+            or die("Query failed : $query<br />\n" . mysqli_error($link));
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Edits data not found']);
+                exit();
+            }
+            elseif ($result->num_rows != 1) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Multiple edits data found with the same ID']);
+                exit();
+            }
+            $edit = [];
+            while (list($editID, $data) = mysqli_fetch_array($result)) {
+                $edit['dataID'] = $editID;
+                $edit['data'] = $data;
+                $edit['dataType'] = 'Edit';
+                $edit['dataFormat'] = 'xml';
+
+            }
+            $result->free_result();
+            $query->free_result();
+            $query->close();
+            echo json_encode($edit);
+        }
         // GET HPCAnalysisRequest for edit
         elseif (preg_match('/^\/edits\/(\d+)\/hpcrequests$/', $endpointName, $matches)) {
             // Get a specific experiment by ID
             $experimentID = $matches[1];
             $query_str  = "SELECT distinct e.experimentID,
-            e.dateUpdated as udate, projectID, runID, label, instrumentID, operatorID, rotorID, rotorCalibrationID,
-             experimentGUID, type, runType, dateBegin, runTemp, comment
+            e.dateUpdated as udate, projectID, runID, e.label, instrumentID, operatorID, rotorID, rotorCalibrationID,
+             experimentGUID, type, runType, dateBegin, runTemp, e.comment
              FROM editedData edits join rawData r on r.rawDataID = edits.rawDataID 
                  join experiment e on r.experimentID = e.experimentID 
                  join experimentPerson ep on ep.experimentID = e.experimentID  
@@ -1330,6 +1460,314 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
             $query->close();
             echo json_encode($models);
         }
+        // Get model details
+        elseif (preg_match('/^\/models\/(\d+)$/', $endpointName, $matches)) {
+            $modelID_in = $matches[1];
+            $query = "SELECT modelID, editedDataID from model WHERE modelID = ?";
+            $query_params = [$modelID_in];
+            $query_params_type = 'i';
+            $query = $link->prepare($query);
+            $query->bind_param($query_params_type, ...$query_params) or die("Query failed : $query<br />\n" . mysqli_error($link));
+            $query->execute() or die("Query failed : $query<br />\n" . mysqli_error($link));
+            $result = $query->get_result();
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Model not found']);
+                exit();
+            } elseif ($result->num_rows != 1) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Multiple models found with the same ID']);
+                exit();
+            }
+            list($modelID, $editedDataID) = mysqli_fetch_array($result);
+            $result->free_result();
+            $query->free_result();
+            $query->close();
+            // check if user has access to this edit
+            $query  = "SELECT distinct
+    e.editedDataID, e.rawDataID, e.editGUID, e.label, e.filename, e.comment, e.lastUpdated
+            from editedData e 
+            join rawData r on e.rawDataID = r.rawDataID
+            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            WHERE e.editedDataID = ?";
+            $query_params = [$editedDataID];
+            $query_params_type = 'i';
+            if ($USER_DATA['userlevel'] < 3) {
+                $query .= " AND ep.personID = ?";
+                $query_params[] = $USER_DATA['id'];
+                $query_params_type .= 'i';
+            }
+            $query = $link->prepare($query);
+            $query->bind_param($query_params_type, ...$query_params);
+            $query->execute();
+            $result = $query->get_result();
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Model not found']);
+                exit();
+            }
+            elseif ($result->num_rows != 1) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Multiple models found with the same ID']);
+                exit();
+            }
+            $edit = [];
+            $response = [];
+            while (list($editID, $rawDataID, $editGUID, $label, $filename, $comment, $lastUpdated) = mysqli_fetch_array($result)) {
+                $edit = array(
+                    'editedDataID' => $editID,
+                    'rawDataID' => $rawDataID,
+                    'editGUID' => $editGUID,
+                    'label' => $label,
+                    'filename' => $filename,
+                    'comment' => $comment,
+                    'lastUpdated' => $lastUpdated
+                );
+            }
+            $response['edit'] = $edit;
+            $result->free_result();
+            $query->free_result();
+            $query->close();
+            // get model
+            $query  = $link->prepare("SELECT m.description, m.globalType, m.meniscus,
+       m.MCIteration, m.variance, m.lastUpdated, hpcar.HPCAnalysisRequestID
+            from model m
+            left outer join HPCAnalysisResultData hpcard on m.modelID = hpcard.resultID and hpcard.HPCAnalysisResultType = 'model'
+            LEFT OUTER JOIN HPCAnalysisResult hpcar on hpcard.HPCAnalysisResultID = hpcar.HPCAnalysisResultID
+            WHERE m.modelID = ? order by m.lastUpdated desc");
+            $query->bind_param("i", $modelID);
+            $query->execute();
+            $result = $query->get_result();
+            $models = [];
+            while (list($description, $globalType, $mensicus, $mc_iter, $var, $lastUpdated, $hpcID) = mysqli_fetch_array($result))
+            {
+                $response['modelID'] = $modelID;
+                $response['description'] = $description;
+                $response['globalType'] = $globalType;
+                $response['meniscus'] = $mensicus;
+                $response['MCIteration'] = $mc_iter;
+                $response['variance'] = $var;
+                $response['lastUpdated'] = $lastUpdated;
+                $response['HPCAnalysisRequestID'] = $hpcID;
+
+                // get latest noise ids
+                $query_noise  = $link->prepare("SELECT distinct 
+    n.noiseID, n.noiseType, n.timeEntered, n.modelID
+            from noise n
+            WHERE n.modelID = ? ORDER BY n.timeEntered desc");
+                $query_noise->bind_param("i", $model['modelID']);
+                $query_noise->execute();
+                $result_noise = $query_noise->get_result();
+                if ($result_noise->num_rows > 0) {
+                    while (list($noiseID, $noiseType, $timeEntered, $modelID) = mysqli_fetch_array($result_noise)) {
+                        if (isset($noiseType)) {
+                            $response[$noiseType] = array(
+                                'noiseID' => $noiseID,
+                                'noiseType' => $noiseType,
+                                'timeEntered' => $timeEntered
+                            );
+                        }
+                    }
+                }
+                $query_noise->free_result();
+                $query_noise->close();
+            }
+            $query->free_result();
+            $query->close();
+            echo json_encode($response);
+        }
+        // Get model data
+        elseif (preg_match('/^\/models\/(\d+)\/data$/', $endpointName, $matches)) {
+            $modelID_in = $matches[1];
+            $query = "SELECT modelID, editedDataID from model WHERE modelID = ?";
+            $query_params = [$modelID_in];
+            $query_params_type = 'i';
+            $query = $link->prepare($query);
+            $query->bind_param($query_params_type, ...$query_params) or die("Query failed : $query<br />\n" . mysqli_error($link));
+            $query->execute() or die("Query failed : $query<br />\n" . mysqli_error($link));
+            $result = $query->get_result();
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Model not found']);
+                exit();
+            } elseif ($result->num_rows != 1) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Multiple models found with the same ID']);
+                exit();
+            }
+            list($modelID, $editedDataID) = mysqli_fetch_array($result);
+            $result->free_result();
+            $query->free_result();
+            $query->close();
+            // check if user has access to this edit
+            $query  = "SELECT distinct
+    e.editedDataID, e.rawDataID, e.editGUID, e.label, e.filename, e.comment, e.lastUpdated
+            from editedData e 
+            join rawData r on e.rawDataID = r.rawDataID
+            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            WHERE e.editedDataID = ?";
+            $query_params = [$editedDataID];
+            $query_params_type = 'i';
+            if ($USER_DATA['userlevel'] < 3) {
+                $query .= " AND ep.personID = ?";
+                $query_params[] = $USER_DATA['id'];
+                $query_params_type .= 'i';
+            }
+            $query = $link->prepare($query);
+            $query->bind_param($query_params_type, ...$query_params);
+            $query->execute();
+            $result = $query->get_result();
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Model not found']);
+                exit();
+            }
+            elseif ($result->num_rows != 1) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Multiple models found with the same ID']);
+                exit();
+            }
+            $result->free_result();
+            $query->free_result();
+            $query->close();
+            // get model
+            $query  = $link->prepare("SELECT m.xml
+            from model m
+            WHERE m.modelID = ? order by m.lastUpdated desc");
+            $query->bind_param("i", $modelID);
+            $query->execute();
+            $result = $query->get_result();
+            $models = [];
+            while (list($xml) = mysqli_fetch_array($result))
+            {
+                $response['dataID'] = $modelID;
+                $response['dataType'] = 'Model';
+                $response['dataFormat'] = 'xml';
+                $response['data'] = $xml;
+            }
+            $result->free_result();
+            $query->free_result();
+            $query->close();
+            echo json_encode($response);
+        }
+        // Get noise details
+        elseif (preg_match('/^\/noises\/(\d+)$/', $endpointName, $matches)) {
+            $noiseID_in = $matches[1];
+            $query = "SELECT noiseID, editedDataID, modelId, noiseType, description, timeEntered from noise WHERE noiseID = ?";
+            $query_params = [$noiseID_in];
+            $query_params_type = 'i';
+            $query = $link->prepare($query);
+            $query->bind_param($query_params_type, ...$query_params) or die("Query failed : $query<br />\n" . mysqli_error($link));
+            $query->execute() or die("Query failed : $query<br />\n" . mysqli_error($link));
+            $result = $query->get_result();
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Noise not found']);
+                exit();
+            } elseif ($result->num_rows != 1) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Multiple noises found with the same ID']);
+                exit();
+            }
+            list($noiseID, $editedDataID, $modelID, $noiseType, $desc, $entered) = mysqli_fetch_array($result);
+            $response = [
+                'noiseID' => $noiseID,
+                'editedDataID' => $editedDataID,
+                'modelID' => $modelID,
+                'noiseType' => $noiseType,
+                'description' => $desc,
+                'timeEntered' => $entered
+            ];
+            $result->free_result();
+            $query->free_result();
+            $query->close();
+            // check if user has access to this edit
+            $query = "SELECT distinct
+    e.editedDataID, e.rawDataID, e.editGUID, e.label, e.filename, e.comment, e.lastUpdated
+            from editedData e 
+            join rawData r on e.rawDataID = r.rawDataID
+            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            WHERE e.editedDataID = ?";
+            $query_params = [$editedDataID];
+            $query_params_type = 'i';
+            if ($USER_DATA['userlevel'] < 3) {
+                $query .= " AND ep.personID = ?";
+                $query_params[] = $USER_DATA['id'];
+                $query_params_type .= 'i';
+            }
+            $query = $link->prepare($query);
+            $query->bind_param($query_params_type, ...$query_params);
+            $query->execute();
+            $result = $query->get_result();
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Noise not found']);
+                exit();
+            } elseif ($result->num_rows != 1) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Multiple noises found with the same ID']);
+                exit();
+            }
+            echo json_encode($response);
+        }
+        // Get noise data
+        elseif (preg_match('/^\/noises\/(\d+)\/data$/', $endpointName, $matches)) {
+            $noiseID_in = $matches[1];
+            $query = "SELECT noiseID, editedDataID, xml  from noise WHERE noiseID = ?";
+            $query_params = [$noiseID_in];
+            $query_params_type = 'i';
+            $query = $link->prepare($query);
+            $query->bind_param($query_params_type, ...$query_params) or die("Query failed : $query<br />\n" . mysqli_error($link));
+            $query->execute() or die("Query failed : $query<br />\n" . mysqli_error($link));
+            $result = $query->get_result();
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Noise not found']);
+                exit();
+            } elseif ($result->num_rows != 1) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Multiple noises found with the same ID']);
+                exit();
+            }
+            list($noiseID, $editedDataID, $xml) = mysqli_fetch_array($result);
+            $response = [
+                'dataID' => $noiseID,
+                'dataType' => 'Noise',
+                'dataFormat' => 'xml',
+                'data' => $xml
+            ];
+            $result->free_result();
+            $query->free_result();
+            $query->close();
+            // check if user has access to this edit
+            $query = "SELECT distinct
+    e.editedDataID, e.rawDataID, e.editGUID, e.label, e.filename, e.comment, e.lastUpdated
+            from editedData e 
+            join rawData r on e.rawDataID = r.rawDataID
+            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            WHERE e.editedDataID = ?";
+            $query_params = [$editedDataID];
+            $query_params_type = 'i';
+            if ($USER_DATA['userlevel'] < 3) {
+                $query .= " AND ep.personID = ?";
+                $query_params[] = $USER_DATA['id'];
+                $query_params_type .= 'i';
+            }
+            $query = $link->prepare($query);
+            $query->bind_param($query_params_type, ...$query_params);
+            $query->execute();
+            $result = $query->get_result();
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Noise not found']);
+                exit();
+            } elseif ($result->num_rows != 1) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Multiple noises found with the same ID']);
+                exit();
+            }
+            echo json_encode($response);
+        }
         // Filter HPCAnalysisRequest
         elseif (str_starts_with($endpointName, '/hpcrequests/search')) {
             parse_str($parsedURI['query'], $params);
@@ -1416,8 +1854,8 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
             h.HPCAnalysisRequestID, h.experimentID, h.submitTime, h.clusterName, h.method, h.analType, 
             r.queueStatus, r.lastMessage, r.updateTime, r.startTime, r.endTime, r.gfacID
             from HPCAnalysisRequest h
-            JOIN HPCDataset d on h.HPCAnalysisRequestID = d.HPCAnalysisRequestID
-            JOIN HPCAnalysisResult r on h.HPCAnalysisRequestID = r.HPCAnalysisRequestID
+            LEFT OUTER JOIN HPCDataset d on h.HPCAnalysisRequestID = d.HPCAnalysisRequestID
+            LEFT OUTER JOIN HPCAnalysisResult r on h.HPCAnalysisRequestID = r.HPCAnalysisRequestID
             JOIN experimentPerson ep on h.experimentID = ep.experimentID
             WHERE (ep.personID = ? or ? > 2) AND h.HPCAnalysisRequestID = ?");
             $query->bind_param("iii", $USER_DATA['id'],$USER_DATA['userlevel'], $HPCAnalysisRequestID);
@@ -1471,8 +1909,8 @@ d.simpoints, d.band_volume, d.radial_grid, d.time_grid
                     'filename' => $filename,
                     'simpoints' => $simpoints,
                     'band_volume' => $b_vol,
-                    'radial_grid' => $rad,
-                    'time_grid' => $tim
+                    'radial_grid' => parseRadialGrid($rad),
+                    'time_grid' => parseTimeGrid($tim)
                 );
                 // get noise
                 $query_noise  = $link->prepare("SELECT n.noiseID, n.noiseType, n.modelID, n.description, n.editedDataID, timeEntered from HPCRequestData d join noise n on n.noiseID = d.noiseID where HPCDatasetID = ?");
@@ -1509,7 +1947,7 @@ d.simpoints, d.band_volume, d.radial_grid, d.time_grid
             while ($row = mysqli_fetch_array($result)) {
                 $results[] = array(
                     'result_type'=> $row['HPCAnalysisResultType'],
-                    'result_id' => $row['HPCAnalysisResultID'],
+                    'result_id' => $row['resultID'],
                 );
             }
             $query->free_result();

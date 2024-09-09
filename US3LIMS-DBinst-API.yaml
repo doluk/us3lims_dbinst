@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.0.0
 info:
   title: UltraScan 3 Lims Database Instance API
   description: A more machine-accessible version of the UltraScan 3 LIMS functionality. The authentication is done using the user's US3 LIMS credentials and sending them with every request as header `Us-Email` and `Us-Password`.
@@ -6,11 +6,30 @@ info:
 servers:
   - url: 'http://localhost:3000'
     description: Local server
+tags:
+  - name: Experiment
+    description: Endpoints for experiments
+  - name: RawData
+    description: Endpoints for raw data
+  - name: Edit
+    description: Endpoints for edited data
+  - name: Model
+    description: Endpoints for models
+  - name: Noise
+    description: Endpoints for noise data
+  - name: HPCRequest
+    description: Endpoints for HPC analysis requests
+  - name: Person
+    description: Endpoints for persons
+  - name: Search
+    description: Endpoints for searching
+  - name: Data
+    description: Endpoints for data
 paths:
   /experiments:
     get:
       tags:
-          - Experiments
+        - Experiment
       description: Get a list of all experiments
       responses:
         200:
@@ -19,10 +38,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Experiments'
+  /experiments/search:
+    get:
+      tags:
+        - Experiment
+        - Search
+      description: Search for experiments
+      parameters:
+        - name: projectID
+          in: query
+          description: ID of project to search for
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: runID
+          in: query
+          description: ID of run to search for
+          required: false
+          schema:
+            type: string
+        - name: label
+          in: query
+          description: Label of experiment to search for
+          required: false
+          schema:
+            type: string
+        - name: project
+          in: query
+          description: Description of project to search for
+          required: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: A list of experiments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Experiments'
+        500:
+          description: Internal server error
   /experiments/{experimentID}:
     get:
       tags:
-          - Experiments
+        - Experiment
       description: Get an experiment by ID
       parameters:
         - name: experimentID
@@ -44,8 +104,7 @@ paths:
   /experiments/{experimentID}/hpcrequests:
     get:
       tags:
-        - Experiments
-        - HPCRequests
+        - Experiment
       description: Get a list of all HPC analysis requests for an experiment
       parameters:
         - name: experimentID
@@ -68,47 +127,7 @@ paths:
           description: Experiment not found
         500:
           description: Internal server error
-  /experiments/search:
-    get:
-      tags:
-        - Experiments
-        - Search
-      description: Search for experiments
-      parameters:
-        - name: projectID
-          in: query
-          description: ID of project to search for
-          required: false
-          schema:
-            type: integer
-            format: int64
-        - name: runID
-          in: query
-          description: ID of run to search for
-          required: false
-          schema:
-            type: string
-        - name: label
-          in: query
-          description: Label of experiment to search for
-          required: false
-          schema:
-              type: string
-        - name: project
-          in: query
-          description: Description of project to search for
-          required: false
-          schema:
-              type: string
-      responses:
-        200:
-          description: A list of experiments
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Experiments'
-        500:
-          description: Internal server error
+
   /rawdata:
     get:
       tags:
@@ -123,33 +142,11 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/RawData'
-  /rawdata/{rawDataID}:
-    get:
-      tags:
-        - RawData
-      description: Get raw data by ID
-      parameters:
-        - name: rawDataID
-          in: path
-          description: ID of raw data to return
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        200:
-          description: Raw data
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RawData'
-        404:
-          description: Raw data not found
   /rawdata/search:
     get:
       tags:
-          - RawData
-          - Search
+        - RawData
+        - Search
       description: Search for raw data
       parameters:
         - name: projectID
@@ -202,8 +199,8 @@ paths:
           description: ID of solution to search for
           required: false
           schema:
-              type: integer
-              format: int64
+            type: integer
+            format: int64
       responses:
         200:
           description: A list of raw data
@@ -215,38 +212,55 @@ paths:
                   $ref: '#/components/schemas/RawData'
         500:
           description: Internal server error
-  /rawdata/{rawDataID}/models:
+  /rawdata/{rawDataID}:
     get:
       tags:
         - RawData
-        - Models
-      description: Get a list of all models for an rawdataset
+      description: Get raw data by ID
       parameters:
         - name: rawDataID
           in: path
-          description: ID of rawdata to return models for
+          description: ID of raw data to return
           required: true
           schema:
             type: integer
             format: int64
       responses:
         200:
-          description: A list of models
+          description: Raw data
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Model'
+                $ref: '#/components/schemas/RawData'
         404:
-          description: RawData not found
-        500:
-          description: Internal server error
+          description: Raw data not found
+  /rawdata/{rawDataID}/data:
+    get:
+      tags:
+        - RawData
+        - Data
+      description: Get the data of a raw data by ID
+      parameters:
+        - name: rawDataID
+          in: path
+          description: ID of raw data to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Raw data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Data'
+        404:
+          description: Raw data not found
   /rawdata/{rawDataID}/hpcrequests:
     get:
       tags:
         - RawData
-        - HPCRequests
       description: Get a list of all HPC analysis requests for a raw data
       parameters:
         - name: rawDataID
@@ -269,10 +283,37 @@ paths:
           description: RawData not found
         500:
           description: Internal server error
+  /rawdata/{rawDataID}/models:
+    get:
+      tags:
+        - RawData
+      description: Get a list of all models for an rawdataset
+      parameters:
+        - name: rawDataID
+          in: path
+          description: ID of rawdata to return models for
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: A list of models
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Model'
+        404:
+          description: RawData not found
+        500:
+          description: Internal server error
+
   /edits/{editID}:
     get:
       tags:
-        - Edits
+        - Edit
       description: Get an edit by ID
       parameters:
         - name: editID
@@ -291,12 +332,12 @@ paths:
                 $ref: '#/components/schemas/EditedData'
         404:
           description: Edit not found
-  /edits/{editID}/models:
+  /edits/{editID}/data:
     get:
       tags:
-        - Edits
-        - Models
-      description: Get a list of all models for an edit
+        - Edit
+        - Data
+      description: Get the data of an edit by ID
       parameters:
         - name: editID
           in: path
@@ -307,22 +348,17 @@ paths:
             format: int64
       responses:
         200:
-          description: A list of models
+          description: Edit Data
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Model'
+                $ref: '#/components/schemas/Data'
         404:
           description: Edit not found
-        500:
-          description: Internal server error
   /edits/{editID}/hpcrequests:
     get:
       tags:
-        - Edits
-        - HPCRequests
+        - Edit
       description: Get a list of all HPC analysis requests for an edit
       parameters:
         - name: editID
@@ -345,11 +381,60 @@ paths:
           description: Edit not found
         500:
           description: Internal server error
+  /edits/{editID}/models:
+    get:
+      tags:
+        - Edit
+      description: Get a list of all models for an edit
+      parameters:
+        - name: editID
+          in: path
+          description: ID of edit to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: A list of models
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Model'
+        404:
+          description: Edit not found
+        500:
+          description: Internal server error
+
+  /hpcrequests:
+    post:
+      tags:
+        - HPCRequest
+      description: Create a new HPC analysis request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HPCAnalysisRequestBody'
+      responses:
+        201:
+          description: HPC analysis request created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HPCAnalysisRequest'
+        400:
+          description: Invalid request
+        500:
+          description: Internal server error
   /hpcrequests/search:
     get:
       tags:
-          - HPCRequests
-          - Search
+        - HPCRequest
+        - Search
       description: Search for HPC analysis requests
       parameters:
         - name: experimentID
@@ -364,46 +449,46 @@ paths:
           description: Time of submission to search for
           required: false
           schema:
-              type: string
-              format: date-time
+            type: string
+            format: date-time
         - name: cluster
           in: query
           description: Cluster to search for
           required: false
           schema:
-              type: string
+            type: string
         - name: method
           in: query
           description: Method to search for
           required: false
           schema:
-              $ref: '#/components/schemas/HPCAnalysisMethod'
+            $ref: '#/components/schemas/HPCAnalysisMethod'
         - name: analType
           in: query
           description: Type of analysis to search for
           required: false
           schema:
-              type: string
+            type: string
         - name: status
           in: query
           description: Status of request to search for
           required: false
           schema:
-              $ref: '#/components/schemas/HPCAnalysisQueueStatus'
+            $ref: '#/components/schemas/HPCAnalysisQueueStatus'
         - name: editedDataID
           in: query
           description: ID of edited data to search for
           required: false
           schema:
-              type: integer
-              format: int64
+            type: integer
+            format: int64
         - name: gfacID
           in: query
           description: ID of GFAC to search for
           required: false
           schema:
-              type: integer
-              format: int64
+            type: integer
+            format: int64
       responses:
         200:
           description: A list of HPC analysis requests
@@ -415,11 +500,10 @@ paths:
                   $ref: '#/components/schemas/HPCAnalysisRequest'
         500:
           description: Internal server error
-
   /hpcrequests/{hpcRequestID}:
     get:
       tags:
-          - HPCRequests
+        - HPCRequest
       description: Get an HPC analysis request by ID
       parameters:
         - name: hpcRequestID
@@ -438,32 +522,107 @@ paths:
                 $ref: '#/components/schemas/HPCAnalysisRequest'
         404:
           description: HPC analysis request not found
-  /hpcrequests:
-    post:
+
+  /models/{modelID}:
+    get:
       tags:
-          - HPCRequests
-      description: Create a new HPC analysis request
-      requestBody:
+        - Model
+      description: Get a model by ID
+      parameters:
+        - name: modelID
+          in: path
+          description: ID of model to return
           required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: A model
           content:
             application/json:
-                schema:
-                  $ref: '#/components/schemas/HPCAnalysisRequestBody'
+              schema:
+                $ref: '#/components/schemas/Model'
+        404:
+          description: Model not found
+  /models/{modelID}/data:
+    get:
+      tags:
+        - Model
+        - Data
+      description: Get the data for a model
+      parameters:
+        - name: modelID
+          in: path
+          description: ID of model to return data for
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
-          201:
-            description: HPC analysis request created
-            content:
-                application/json:
-                  schema:
-                      $ref: '#/components/schemas/HPCAnalysisRequest'
-          400:
-            description: Invalid request
-          500:
-            description: Internal server error
+        200:
+          description: The data for the model
+          content:
+            application/json:
+            schema:
+              $ref: '#/components/schemas/Data'
+        404:
+          description: Model not found
+        500:
+          description: Internal server error
+
+  /noises/{noiseID}:
+    get:
+      tags:
+        - Noise
+      description: Get a noise by ID
+      parameters:
+        - name: noiseID
+          in: path
+          description: ID of noise to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: A noise
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Noise'
+        404:
+          description: Noise not found
+  /noises/{noiseID}/data:
+    get:
+      tags:
+        - Noise
+        - Data
+      description: Get the data for a noise
+      parameters:
+        - name: noiseID
+          in: path
+          description: ID of noise to return data for
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: The data for the noise
+          content:
+            application/json:
+            schema:
+              $ref: '#/components/schemas/Data'
+        404:
+          description: Noise not found
+        500:
+          description: Internal server error
+
   /persons:
     get:
       tags:
-          - Person
+        - Person
       description: Get a list of all persons
       responses:
         200:
@@ -474,47 +633,11 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Person'
-  /persons/{personID}:
-    get:
-      tags:
-          - Person
-      description: Get a person by ID
-      parameters:
-        - name: personID
-          in: path
-          description: ID of person to return
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        200:
-          description: A person
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Person'
-        404:
-          description: Person not found
-  /persons/me:
-    get:
-      tags:
-          - Person
-      description: Get the current person
-      responses:
-        200:
-          description: The current person
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Person'
-        404:
-          description: Person not found
   /persons/search:
     get:
       tags:
-          - Person
-          - Search
+        - Person
+        - Search
       description: Search for persons
       parameters:
         - name: email
@@ -567,528 +690,638 @@ paths:
           description: No persons found
         500:
           description: Internal server error
+  /persons/me:
+    get:
+      tags:
+        - Person
+      description: Get the current person
+      responses:
+        200:
+          description: The current person
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        404:
+          description: Person not found
+  /persons/{personID}:
+    get:
+      tags:
+        - Person
+      description: Get a person by ID
+      parameters:
+        - name: personID
+          in: path
+          description: ID of person to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: A person
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        404:
+          description: Person not found
 
-  
 components:
-    schemas:
+  schemas:
+    Data:
+      description: Model for a data response
+      type: object
+      properties:
+        dataID:
+          type: integer
+          format: int64
+        dataType:
+          type: string
+          enum:
+            - RawData
+            - Edit
+            - Model
+            - Noise
+        dataFormat:
+          type: string
+          enum:
+            - xml
+            - json
+            - string
+            - binary
+        data:
+          anyOf:
+            - type: string
+              format: binary
+            - type: string
+              format: byte
+            - type: string
 
 
-      Experiments:
-        description: List of experiments
-        type: array
-        items:
-            $ref: '#/components/schemas/Experiment'
-      Experiment:
-        description: An experiment
-        type: object
-        required:
-          - experimentID
-          - lastUpdated
-          - runID
-          - projectID
-          - label
-        properties:
-          experimentID:
-            type: integer
-            format: int64
-          lastUpdated:
-            type: string
-            format: date-time
-          runID:
-            type: string
-          projectID:
-            type: integer
-            format: int64
-          label:
-            type: string
-          instrumentID:
-            type: integer
-            format: int64
-          operatorID:
-            type: integer
-            format: int64
-          rotorID:
-            type: integer
-            format: int64
-          rotorCalibrationID:
-            type: integer
-            format: int64
-          experimentGUID:
-            type: string
-          experimentType:
-            $ref: '#/components/schemas/ExperimentType'
-          runType:
-            $ref: '#/components/schemas/RunType'
-          protocolID:
-            type: integer
-            format: int64
-          runTemp:
-            type: number
-            format: float
-          dateBegin:
-            type: string
-            format: date-time
-          projects:
-            type: array
-            items:
-              $ref: '#/components/schemas/Project'
-          rawdata:
-            type: array
-            items:
-              $ref: '#/components/schemas/RawData'
-          hpcrequests:
-            type: array
-            items:
-              $ref: '#/components/schemas/HPCAnalysisRequest'
+    Experiments:
+      description: List of experiments
+      type: array
+      items:
+        $ref: '#/components/schemas/Experiment'
+    Experiment:
+      description: An experiment
+      type: object
+      required:
+        - experimentID
+        - lastUpdated
+        - runID
+        - projectID
+        - label
+      properties:
+        experimentID:
+          type: integer
+          format: int64
+        lastUpdated:
+          type: string
+          format: date-time
+        runID:
+          type: string
+        projectID:
+          type: integer
+          format: int64
+        label:
+          type: string
+        instrumentID:
+          type: integer
+          format: int64
+        operatorID:
+          type: integer
+          format: int64
+        rotorID:
+          type: integer
+          format: int64
+        rotorCalibrationID:
+          type: integer
+          format: int64
+        experimentGUID:
+          type: string
+        experimentType:
+          $ref: '#/components/schemas/ExperimentType'
+        runType:
+          $ref: '#/components/schemas/RunType'
+        protocolID:
+          type: integer
+          format: int64
+        runTemp:
+          type: number
+          format: float
+        dateBegin:
+          type: string
+          format: date-time
+        projects:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+        rawdata:
+          type: array
+          items:
+            $ref: '#/components/schemas/RawData'
+        hpcrequests:
+          type: array
+          items:
+            $ref: '#/components/schemas/HPCAnalysisRequest'
 
-      Project:
-          type: object
-          required:
-              - projectID
-              - description
-              - status
-          properties:
-                projectID:
-                    type: integer
-                    format: int64
-                description:
-                    type: string
-                status:
-                    type: string
-      RunType:
-        type: string
-        enum:
-          - RA
-          - RI
-          - IP
-          - FI
-          - WA
-          - WI
-          - RI+IP
-          - RI+FI
-          - IP+FI
-          - RI+IP+FI
-      ExperimentType:
-        type: string
-        enum:
-          - velocity
-          - equilibrium
-          - diffusion
-          - buoyancy
-          - calibration
-          - other
-        default: velocity
-      RawData:
-        type: object
-        required:
-          - rawDataID
-          - label
-          - filename
-        properties:
-            rawDataID:
-                type: integer
-                format: int64
-            label:
-                type: string
-            filename:
-                type: string
-            comment:
-                type: string
-            solutionID:
-                type: integer
-                format: int64
-            experimentID:
-                type: integer
-                format: int64
-            runID:
-                type: string
-            lastUpdated:
-                type: string
-                format: timestamp
-            description:
-                type: string
-            edits:
-                type: array
-                items:
-                    $ref: '#/components/schemas/EditedData'
-      HPCAnalysisMethod:
-        type: string
-        enum:
-          - 2DSA
-          - 2DSA_CG
-          - 2DSA_MW
-          - GA
-          - GA_MW
-          - GA_SC
-          - DMGA
-          - PCSA
-        default: 2DSA
-      HPCAnalysisQueueStatus:
-        type: string
-        enum:
-          - queued
-          - failed
-          - running
-          - aborted
-          - completed
-        default: queued
-      HPCAnalysisRequest:
-        type: object
-        required:
-          - HPCAnalysisRequestID
-        properties:
-          HPAnalysisRequestID:
-            type: integer
-            format: int64
-          experimentID:
-            type: integer
-            format: int64
-          queueStatus:
-            $ref: '#/components/schemas/HPCAnalysisQueueStatus'
-          lastMessage:
-            type: string
-          updateTime:
-            type: string
-            format: date-time
-          startTime:
-            type: string
-            format: date-time
-          endTime:
-            type: string
-            format: date-time
-          gfacID:
-            type: string
-          investigatorGUID:
-            type: string
-          submitterGUID:
-            type: string
-          submitTime:
-            type: string
-            format: date-time
-          cluster:
-            type: string
-          method:
-            $ref: '#/components/schemas/HPCAnalysisMethod'
-          analType:
-            type: string
-      EditedData:
-        type: object
-        required:
-          - editedDataID
-        properties:
-          editedDataID:
-              type: integer
+    Project:
+      type: object
+      required:
+        - projectID
+        - description
+        - status
+      properties:
+        projectID:
+          type: integer
+          format: int64
+        description:
+          type: string
+        status:
+          type: string
+    RunType:
+      type: string
+      enum:
+        - RA
+        - RI
+        - IP
+        - FI
+        - WA
+        - WI
+        - RI+IP
+        - RI+FI
+        - IP+FI
+        - RI+IP+FI
+    ExperimentType:
+      type: string
+      enum:
+        - velocity
+        - equilibrium
+        - diffusion
+        - buoyancy
+        - calibration
+        - other
+      default: velocity
+    RawData:
+      type: object
+      required:
+        - rawDataID
+        - label
+        - filename
+      properties:
+        rawDataID:
+          type: integer
+          format: int64
+        label:
+          type: string
+        filename:
+          type: string
+        comment:
+          type: string
+        solutionID:
+          type: integer
+          format: int64
+        experimentID:
+          type: integer
+          format: int64
+        runID:
+          type: string
+        lastUpdated:
+          type: string
+          format: timestamp
+        description:
+          type: string
+        edits:
+          type: array
+          items:
+            $ref: '#/components/schemas/EditedData'
+    HPCAnalysisMethod:
+      type: string
+      enum:
+        - 2DSA
+        - 2DSA_CG
+        - 2DSA_MW
+        - GA
+        - GA_MW
+        - GA_SC
+        - DMGA
+        - PCSA
+      default: 2DSA
+    HPCAnalysisQueueStatus:
+      type: string
+      enum:
+        - queued
+        - failed
+        - running
+        - aborted
+        - completed
+      default: queued
+    HPCAnalysisRequest:
+      type: object
+      required:
+        - HPCAnalysisRequestID
+      properties:
+        HPAnalysisRequestID:
+          type: integer
+          format: int64
+        experimentID:
+          type: integer
+          format: int64
+        queueStatus:
+          $ref: '#/components/schemas/HPCAnalysisQueueStatus'
+        lastMessage:
+          type: string
+        updateTime:
+          type: string
+          format: date-time
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        gfacID:
+          type: string
+        investigatorGUID:
+          type: string
+        submitterGUID:
+          type: string
+        submitTime:
+          type: string
+          format: date-time
+        cluster:
+          type: string
+        method:
+          $ref: '#/components/schemas/HPCAnalysisMethod'
+        analType:
+          type: string
+        datasets:
+          type: array
+          items:
+            $ref: '#/components/schemas/HPCJobDataset'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/HPCJobResultSet'
+    EditedData:
+      type: object
+      required:
+        - editedDataID
+      properties:
+        editedDataID:
+          type: integer
+          format: int64
+        rawDataID:
+          type: integer
+          format: int64
+        editGUID:
+          type: string
+        label:
+          type: string
+        filename:
+          type: string
+        comment:
+          type: string
+        lastUpdated:
+          type: string
+          format: date-time
+        models:
+          type: array
+          items:
+            $ref: '#/components/schemas/Model'
+        ti_noise:
+          $ref: '#/components/schemas/Noise'
+        ri_noise:
+          $ref: '#/components/schemas/Noise'
+        hpcanalysisrequest:
+          $ref: '#/components/schemas/HPCAnalysisRequest'
+    Model:
+      type: object
+      required:
+        - modelID
+      properties:
+        modelID:
+          type: integer
+          format: int64
+        description:
+          type: string
+        globalType:
+          $ref: '#/components/schemas/GlobalType'
+        meniscus:
+          type: number
+          format: float
+        MCIteration:
+          type: integer
+          format: int64
+        variance:
+          type: number
+          format: float
+        lastUpdated:
+          type: string
+          format: date-time
+        ti_noise:
+          $ref: '#/components/schemas/Noise'
+        ri_noise:
+          $ref: '#/components/schemas/Noise'
+        edit:
+          $ref: '#/components/schemas/EditedData'
+    GlobalType:
+      type: string
+      enum:
+        - NORMAL
+        - MENISCUS
+        - GLOBAL
+        - SUPERGLOBAL
+      default: NORMAL
+    NoiseType:
+      type: string
+      enum:
+        - ri_noise
+        - ti_noise
+      default: ti_noise
+    MeniscusBottomFitType:
+      type: string
+      description: Whether to fit the meniscus and/or bottom
+      enum:
+        - None
+        - Meniscus
+        - Bottom
+        - Both
+    Noise:
+      type: object
+      required:
+        - noiseID
+      properties:
+        noiseID:
+          type: integer
+          format: int64
+        noiseType:
+          $ref: '#/components/schemas/NoiseType'
+        description:
+          type: string
+        timeEntered:
+          type: string
+          format: date-time
+        editedDataID:
+          type: integer
+          format: int64
+        modelID:
+          type: integer
+          format: int64
+    RadialGrid:
+      type: string
+      enum:
+        - ASTFEM
+        - Claverie
+        - Moving Hat
+        - Custom
+        - ASTFVM
+      default: ASTFEM
+    TimeGrid:
+      type: string
+      enum:
+        - AST
+        - Constant
+      default: AST
+    HPCJobParameters:
+      type: object
+      properties:
+        s_min:
+          type: number
+          format: float
+        s_max:
+          type: number
+          format: float
+        s_grid_points:
+          type: integer
+          format: int64
+        k_min:
+          type: number
+          format: float
+          description: This is called ff0_min in the US3 LIMS
+        k_max:
+          type: number
+          format: float
+          description: This is called ff0_max in the US3 LIMS
+        k_grid_points:
+          type: integer
+          format: int64
+          description: This is called ff0_points in the US3 LIMS
+        mc_iter:
+          type: integer
+          format: int64
+          description: Number of Monte Carlo iterations
+        max_iterations:
+          type: integer
+          format: int64
+          default: 10
+          description: Maximum number of iterations
+        iterative:
+          type: boolean
+          default: false
+          description: Whether to use iterative fitting
+        req_mgroupcount:
+          type: integer
+          format: int64
+          default: 1
+          description: Number of analysis mpi groups (each group has 1 master and n slaves)
+        fit_ti_noise:
+          type: boolean
+          default: false
+          description: Fit the time-invariant noise
+        fit_ri_noise:
+          type: boolean
+          default: false
+          description: Fit the radial-invariant noise
+        fit_mb:
+          $ref: '#/components/schemas/MeniscusBottomFitType'
+        fit_mb_range:
+          type: number
+          format: float
+          default: 0.03
+          description: Range of the meniscus and bottom fit
+        fit_mb_points:
+          type: integer
+          format: int64
+          default: 1
+          description: Number of points to fit for the meniscus and bottom in the range
+        custom_grid_id:
+          type: integer
+          format: int64
+          default: 0
+          description: ID of the custom grid, only used if radial_grid is Custom
+        simpoints:
+          type: integer
+          format: int64
+          default: 100
+        band_volume:
+          type: number
+          format: float
+          default: 0.0
+        radial_grid:
+          $ref: '#/components/schemas/RadialGrid'
+        time_grid:
+          $ref: '#/components/schemas/TimeGrid'
+    HPCJobResultSet:
+      type: object
+      properties:
+        result_id:
+          type: integer
+          format: int64
+        result_type:
+          type: string
+          enum:
+            - model
+            - noise
+            - job_stats
+    HPCJobDataSetData:
+      type: object
+      properties:
+        edit_id:
+          type: integer
+          format: int64
+          description: ID of the data edit, -1 for latest edit
+          default: -1
+        raw_data_id:
+          type: integer
+          format: int64
+          description: ID of the raw data, will use automatically the latest edit if edit_id is -1 or not provided
+        ri_noise:
+          type: integer
+          format: int64
+          description: ID of the ri noise data, -1 for latest noise, 0 for no noise
+          default: -1
+        ti_noise:
+          type: integer
+          format: int64
+          description: ID of the ti noise data, -1 for latest noise, 0 for no noise
+          default: -1
+        simpoints:
+          type: integer
+          format: int64
+          default: 200
+        band_volume:
+          type: number
+          format: float
+          default: 0.0
+        radial_grid:
+          $ref: '#/components/schemas/RadialGrid'
+        time_grid:
+          $ref: '#/components/schemas/TimeGrid'
+
+
+
+    HPCJobDataset:
+      type: object
+      properties:
+        HPCDatasetID:
+          type: integer
+          format: int64
+        editedDataID:
+          type: integer
+          format: int64
+        rawDataID:
+          type: integer
+          format: int64
+        label:
+          type: string
+        filename:
+          type: string
+        simpoints:
+          type: integer
+          format: int64
+        band_volume:
+          type: number
+          format: float
+        radial_grid:
+          $ref: '#/components/schemas/RadialGrid'
+        time_grid:
+          $ref: '#/components/schemas/TimeGrid'
+        noise:
+          type: array
+          items:
+            - type: integer
               format: int64
-          rawDataID:
-              type: integer
-              format: int64
-          editGUID:
-              type: string
-          label:
-              type: string
-          filename:
-                type: string
-          comment:
-                type: string
-          lastUpdated:
-                type: string
-                format: date-time
-          models:
-                type: array
-                items:
-                    $ref: '#/components/schemas/Model'
-          ti_noise:
-                $ref: '#/components/schemas/Noise'
-          ri_noise:
-                $ref: '#/components/schemas/Noise'
-          hpcanalysisrequest:
-                $ref: '#/components/schemas/HPCAnalysisRequest'
-      Model:
-        type: object
-        required:
-          - modelID
-        properties:
-          modelID:
-              type: integer
-              format: int64
-          description:
-              type: string
-          globalType:
-              $ref: '#/components/schemas/GlobalType'
-          meniscus:
-              type: number
-              format: float
-          MCIteration:
-              type: integer
-              format: int64
-          variance:
-              type: number
-              format: float
-          lastUpdated:
-              type: string
-              format: date-time
-          ti_noise:
-              $ref: '#/components/schemas/Noise'
-          ri_noise:
-              $ref: '#/components/schemas/Noise'
-      GlobalType:
-        type: string
-        enum:
-          - NORMAL
-          - MENISCUS
-          - GLOBAL
-          - SUPERGLOBAL
-        default: NORMAL
-      NoiseType:
-        type: string
-        enum:
-          - ri_noise
-          - ti_noise
-        default: ti_noise
-      MeniscusBottomFitType:
-        type: string
-        enum:
-          - None
-          - Meniscus
-          - Bottom
-          - Both
-      Noise:
-        type: object
-        required:
-          - noiseID
-        properties:
-          noiseID:
-              type: integer
-              format: int64
-          noiseType:
-              $ref: '#/components/schemas/NoiseType'
-          description:
-              type: string
-          timeEntered:
-              type: string
-              format: date-time
-          editedDataID:
-              type: integer
-              format: int64
-      RadialGrid:
-        type: string
-        enum:
-          - ASTFEM
-          - Claverie
-          - Moving Hat
-          - Custom
-          - ASTFVM
-        default: ASTFEM
-      TimeGrid:
-        type: string
-        enum:
-          - AST
-          - Constant
-        default: AST
-      HPCJobParameters:
-        type: object
-        properties:
-          s_min:
-              type: number
-              format: float
-          s_max:
-              type: number
-              format: float
-          s_grid_points:
-              type: integer
-              format: int64
-          k_min:
-              type: number
-              format: float
-              description: This is called ff0_min in the US3 LIMS
-          k_max:
-              type: number
-              format: float
-              description: This is called ff0_max in the US3 LIMS
-          k_grid_points:
-              type: integer
-              format: int64
-              description: This is called ff0_points in the US3 LIMS
-          mc_iter:
-              type: integer
-              format: int64
-              description: Number of Monte Carlo iterations
-          max_iterations:
-              type: integer
-              format: int64
-              default: 10
-              description: Maximum number of iterations
-          iterative:
-              type: boolean
-              default: false
-              description: Whether to use iterative fitting
-          req_mgroupcount:
-              type: integer
-              format: int64
-              default: 1
-              description: Number of analysis mpi groups (each group has 1 master and n slaves)
-          ti_noise:
-            type: boolean
-            default: false
-            description: Fit the time-invariant noise
-          ri_noise:
-            type: boolean
-            default: false
-            description: Fit the radial-invariant noise
-          fit_mb:
-            $ref: '#/components/schemas/MeniscusBottomFitType'
-            description: Whether to fit the meniscus and/or bottom
-          fit_mb_range:
-            type: number
-            format: float
-            default: 0.03
-            description: Range of the meniscus and bottom fit
-          fit_mb_points:
-            type: integer
-            format: int64
-            default: 1
-            description: Number of points to fit for the meniscus and bottom in the range
-          custom_grid_id:
-            type: integer
-            format: int64
-            default: 0
-            description: ID of the custom grid, only used if radial_grid is Custom
-          simpoints:
-            type: integer
-            format: int64
-            default: 100
-          band_volume:
-            type: number
-            format: float
-            default: 0.0
-          radial_grid:
-            $ref: '#/components/schemas/RadialGrid'
-          time_grid:
-            $ref: '#/components/schemas/TimeGrid'
-
-      HPCJobDataSetData:
-        type: object
-        properties:
-          edit_id:
-              type: integer
-              format: int64
-              description: ID of the data edit, -1 for latest edit
-              default: -1
-          raw_data_id:
-              type: integer
-              format: int64
-              description: ID of the raw data, will use automatically the latest edit if edit_id is -1 or not provided
-          ri_noise:
-            type: integer
-            format: int64
-            description: ID of the ri noise data, -1 for latest noise, 0 for no noise
-            default: -1
-          ti_noise:
-            type: integer
-            format: int64
-            description: ID of the ti noise data, -1 for latest noise, 0 for no noise
-            default: -1
-          simpoints:
-            type: integer
-            format: int64
-            default: 200
-          band_volume:
-            type: number
-            format: float
-            default: 0.0
-          radial_grid:
-            $ref: '#/components/schemas/RadialGrid'
-          time_grid:
-            $ref: '#/components/schemas/TimeGrid'
-
-
-
-
-      HPCJobDataset:
-        type: object
-        properties:
-          data:
-            type: array
-            items:
-              $ref: '#/components/schemas/HPCJobDataSetData'
 
 
 
 
 
-      HPCAnalysisRequestBody:
-        type: object
-        properties:
-          separate_datasets:
-              type: string
-              enum:
-                - global
-                - separate
-                - composite
-              default: separate
-          datasets:
-              type: array
-              items:
-                  $ref: '#/components/schemas/HPCJobDataSetData'
-          job_parameters:
-              $ref: '#/components/schemas/HPCJobParameters'
-          clusternode:
-              type: string
-          investigator_id:
-              type: integer
-              format: int64
-              description: ID of the data owner in case you submit on behalf of someone else
-          HPCAnalysisMethod:
-              $ref: '#/components/schemas/HPCAnalysisMethod'
+    HPCAnalysisRequestBody:
+      type: object
+      properties:
+        separate_datasets:
+          type: string
+          enum:
+            - global
+            - separate
+            - composite
+          default: separate
+        datasets:
+          type: array
+          items:
+            $ref: '#/components/schemas/HPCJobDataSetData'
+        job_parameters:
+          $ref: '#/components/schemas/HPCJobParameters'
+        clusternode:
+          type: string
+        investigator_id:
+          type: integer
+          format: int64
+          description: ID of the data owner in case you submit on behalf of someone else
+        HPCAnalysisMethod:
+          $ref: '#/components/schemas/HPCAnalysisMethod'
 
 
-      Person:
-        type: object
-        required:
-          - personID
-          - personGUID
-          - email
-          - firstName
-          - lastName
-          - activated
-        properties:
-            personID:
-                type: integer
-                format: int64
-            personGUID:
-                type: string
-            email:
-                type: string
-            firstName:
-                type: string
-            lastName:
-                type: string
-            activated:
-                type: boolean
-            username:
-                type: string
-            advancedLevel:
-                type: boolean
-            userLevel:
-                type: integer
-                format: int64
-            clusterAuthorizations:
-                type: string
-            clusterNodes:
-                type: array
-                items:
-                    $ref: '#/components/schemas/ClusterNode'
-      ClusterNode:
-        type: object
-        properties:
-          name:
-              type: string
-          explicit_name:
-              type: string
-          short_name:
-              type: string
-          queue:
-              type: string
+    Person:
+      type: object
+      required:
+        - personID
+        - personGUID
+        - email
+        - firstName
+        - lastName
+        - activated
+      properties:
+        personID:
+          type: integer
+          format: int64
+        personGUID:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        activated:
+          type: boolean
+        username:
+          type: string
+        advancedLevel:
+          type: boolean
+        userLevel:
+          type: integer
+          format: int64
+        clusterAuthorizations:
+          type: string
+        clusterNodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterNode'
+    ClusterNode:
+      type: object
+      properties:
+        name:
+          type: string
+        explicit_name:
+          type: string
+        short_name:
+          type: string
+        queue:
+          type: string
 
 
 
@@ -1099,15 +1332,15 @@ components:
 
 
 
-    securitySchemes:
-      USEmail:
-        type: apiKey
-        in: header
-        name: Us-Email
-      USPassword:
-        type: apiKey
-        in: header
-        name: Us-Password
+  securitySchemes:
+    USEmail:
+      type: apiKey
+      in: header
+      name: Us-Email
+    USPassword:
+      type: apiKey
+      in: header
+      name: Us-Password
 security:
-  - USEmail: []
-    USPassword: []
+  - USEmail: [ ]
+    USPassword: [ ]
