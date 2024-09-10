@@ -267,20 +267,22 @@ switch ($method) {
         elseif (preg_match('/^\/experiments\/(\d+)$/', $endpointName, $matches)) {
             // Get a specific experiment by ID
             $experimentID = $matches[1];
+
+            $expID = $experimentID;
             $query_str  ="SELECT distinct e.experimentID,
             e.dateUpdated as udate, projectID, runID, label, instrumentID, operatorID, rotorID, rotorCalibrationID,
              experimentGUID, type, runType, dateBegin, runTemp, comment
-             FROM experiment e join experimentPerson ep on ep.experimentID = e.experimentID
+             FROM experiment e left outer join experimentPerson ep on ep.experimentID = e.experimentID
              WHERE e.experimentID = ?";
             if ($USER_DATA['userlevel'] < 3) {
                 $query_str .= " AND ep.personID = ?";
                 $query = $link->prepare($query_str);
-                $query->bind_param("ii", $USER_DATA['id'],$experimentID);
+                $query->bind_param("ii", $expID, $USER_DATA['id']);
             }
             else
             {
                 $query = $link->prepare($query_str);
-                $query->bind_param("i", $experimentID);
+                $query->bind_param("i", $expID);
             }
             $query->execute();
             $result = $query->get_result()
@@ -295,7 +297,6 @@ switch ($method) {
                 echo json_encode(['error' => 'Multiple experiments found with the same ID']);
                 exit();
             }
-            $experiment = array();
             while (list($expID, $udate, $projectID, $runID, $label, $instrumentID, $operatorID, $rotorID, $rotorCalibrationID, $experimentGUID, $type, $runType, $dateBegin, $runTemp, $comment) = mysqli_fetch_array($result)) {
                 $experiment = array(
                     'experimentID' => $expID,
@@ -315,6 +316,7 @@ switch ($method) {
                     'comment' => $comment,
                 );
             }
+            $result->free_result();
             $query->free_result();
             $query->close();
             // Get the project details
@@ -341,7 +343,7 @@ switch ($method) {
             $query->close();
             // get all associated persons
             $query2  = $link->prepare("SELECT personID FROM experimentPerson WHERE experimentID = ?");
-            $query2->bind_param("i", $experimentID);
+            $query2->bind_param("i", $experiment['experimentID']);
             $query2->execute();
             $result2 = $query2->get_result();
             $persons = [];
@@ -355,7 +357,7 @@ switch ($method) {
             $query  = $link->prepare("SELECT r.rawDataID, r.label, r.filename, 
             r.comment, TRIM(TRAILING CHAR(0x00) FROM CONVERT (substr(data from 27 for 240) USING utf8)) as description
             from rawData r where r.experimentID = ? ORDER BY r.filename");
-            $query->bind_param("i", $experimentID);
+            $query->bind_param("i", $experiment['experimentID']);
             $query->execute();
             $result = $query->get_result();
             $experiment['rawdata'] = [];
@@ -449,24 +451,24 @@ switch ($method) {
         // Search experiments
         elseif (str_starts_with($endpointName, '/experiments/search')) {
             // Filter experiments by query parameters
-            $query_params = [$USER_DATA['id']];
-            $query_params_type = 'i';
+            $query_params = [];
+            $query_params_type = '';
             $query  = "SELECT distinct
             e.experimentID, 
     e.dateUpdated as udate, 
     e.runID, 
     e.projectID,
     e.label FROM experiment e
-            JOIN experimentPerson ep ON e.experimentID = ep.experimentID 
+            left outer JOIN experimentPerson ep ON e.experimentID = ep.experimentID 
             JOIN project p ON e.projectID = p.projectID
                 ";
             if ($USER_DATA['userlevel'] < 3) {
-                $query .= " WHERE ep.personID = ?";
+                $query .= " WHERE ep.personID = ? ";
                 $query_params[] = $USER_DATA['id'];
                 $query_params_type .= 'i';
             }
             else {
-                $query .= " WHERE 1 = 1";
+                $query .= " WHERE 1 = 1 ";
             }
             if (isset($params['projectID']) && is_numeric($params['projectID'])) {
                 $query .= " AND e.projectID = ?";

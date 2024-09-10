@@ -1277,8 +1277,8 @@ components:
         noise:
           type: array
           items:
-            - type: integer
-              format: int64
+            type: integer
+            format: int64
 
 
 
