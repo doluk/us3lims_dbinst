@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
-  title: UltraScan 3 Lims Database Instance API
-  description: A more machine-accessible version of the UltraScan 3 LIMS functionality. The authentication is done using the user's US3 LIMS credentials and sending them with every request as header `Us-Email` and `Us-Password`.
+  title: UltraScan 3 LIMS Database Instance API
+  description: A more machine-accessible version of the UltraScan 3 LIMS functionality. The authentication is done using the user's US3 LIMS credentials and sending them with every request as header `Us-Email` and `Us-Password`. Alternatively Basic Auth can be used.
   version: 1.0.0
 servers:
   - url: 'http://localhost:3000'
@@ -287,7 +287,7 @@ paths:
     get:
       tags:
         - RawData
-      description: Get a list of all models for an rawdataset
+      description: Get a list of all models for a raw data set
       parameters:
         - name: rawDataID
           in: path
@@ -363,7 +363,7 @@ paths:
       parameters:
         - name: editID
           in: path
-          description: ID of the edit to return hpc analysis requests for
+          description: ID of the edit to return HPC analysis requests for
           required: true
           schema:
             type: integer
@@ -420,12 +420,12 @@ paths:
             schema:
               $ref: '#/components/schemas/HPCAnalysisRequestBody'
       responses:
-        201:
+        200:
           description: HPC analysis request created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HPCAnalysisRequest'
+                $ref: '#/components/schemas/HPCRequestSubmission'
         400:
           description: Invalid request
         500:
@@ -484,7 +484,7 @@ paths:
             format: int64
         - name: gfacID
           in: query
-          description: ID of GFAC to search for
+          description: ID of gfac to search for
           required: false
           schema:
             type: integer
@@ -564,8 +564,8 @@ paths:
           description: The data for the model
           content:
             application/json:
-            schema:
-              $ref: '#/components/schemas/Data'
+              schema:
+                $ref: '#/components/schemas/Data'
         404:
           description: Model not found
         500:
@@ -612,8 +612,8 @@ paths:
           description: The data for the noise
           content:
             application/json:
-            schema:
-              $ref: '#/components/schemas/Data'
+              schema:
+                $ref: '#/components/schemas/Data'
         404:
           description: Noise not found
         500:
@@ -822,7 +822,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/RawData'
-        hpcrequests:
+        HPCrequests:
           type: array
           items:
             $ref: '#/components/schemas/HPCAnalysisRequest'
@@ -918,12 +918,32 @@ components:
         - aborted
         - completed
       default: queued
+    HPCRequestSubmission:
+      type: object
+      required:
+        - success
+        - HPCrequestIDs
+        - results
+      properties:
+        success:
+          type: string
+        HPCrequestIDs:
+          description: The IDs of the HPC requests that were submitted
+          type: array
+          items:
+            type: integer
+            format: int64
+        results:
+          description: The results/errors of the submission(s)
+          type: array
+          items:
+            type: string
     HPCAnalysisRequest:
       type: object
       required:
-        - HPCAnalysisRequestID
+        - HPCrequestID
       properties:
-        HPAnalysisRequestID:
+        HPCrequestID:
           type: integer
           format: int64
         experimentID:
@@ -989,18 +1009,26 @@ components:
           format: date-time
         models:
           type: array
+          description: The models for this edit. For each model only the modelID, description and globalType are returned
           items:
             $ref: '#/components/schemas/Model'
-        ti_noise:
-          $ref: '#/components/schemas/Noise'
-        ri_noise:
-          $ref: '#/components/schemas/Noise'
-        hpcanalysisrequest:
-          $ref: '#/components/schemas/HPCAnalysisRequest'
+        latest_noises:
+          type: array
+          description: The latest noise data for this edit
+          items:
+              $ref: '#/components/schemas/Noise'
+          maxItems: 2
+          uniqueItems: true
+        HPCrequestID:
+          type: integer
+          format: int64
+          description: The latest HPC request for this edit
     Model:
       type: object
       required:
         - modelID
+        - description
+        - globalType
       properties:
         modelID:
           type: integer
@@ -1010,6 +1038,7 @@ components:
         globalType:
           $ref: '#/components/schemas/GlobalType'
         meniscus:
+          description: The meniscus used for the analysis producing this model
           type: number
           format: float
         MCIteration:
@@ -1027,6 +1056,9 @@ components:
           $ref: '#/components/schemas/Noise'
         edit:
           $ref: '#/components/schemas/EditedData'
+        HPCrequestID:
+          type: integer
+          format: int64
     GlobalType:
       type: string
       enum:
@@ -1040,7 +1072,6 @@ components:
       enum:
         - ri_noise
         - ti_noise
-      default: ti_noise
     MeniscusBottomFitType:
       type: string
       description: Whether to fit the meniscus and/or bottom
@@ -1053,6 +1084,10 @@ components:
       type: object
       required:
         - noiseID
+        - noiseType
+        - timeEntered
+        - editedDataID
+        - modelID
       properties:
         noiseID:
           type: integer
@@ -1341,6 +1376,11 @@ components:
       type: apiKey
       in: header
       name: Us-Password
+    LIMSLogin:
+      type: http
+      scheme: basic
+
 security:
-  - USEmail: [ ]
-    USPassword: [ ]
+  - LIMSLogin: []
+  - USEmail: []
+    USPassword: []

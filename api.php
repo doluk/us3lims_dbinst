@@ -81,10 +81,19 @@ $endpointName = $endpoint ?? '';
 $headers = apache_request_headers();
 $email = $headers['Us-Email'] ?? '';
 $password = $headers['Us-Password'] ?? '';
+// if email and password are not provided check for basic auth
+if (empty($email) || empty($password)) {
+    if (isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])) {
+        $email = $_SERVER['PHP_AUTH_USER']??'';
+        $password = $_SERVER['PHP_AUTH_PW']??'';
+    }
+}
 
 // Check if email and password are provided
 if (empty($email) || empty($password)) {
     http_response_code(400);
+    header('WWW-Authenticate: Basic realm="US3 API"');
+    header('HTTP/1.0 401 Unauthorized');
     echo json_encode(['error' => 'Email and password are required']);
     exit();
 }
@@ -1031,7 +1040,7 @@ switch ($method) {
                     'MCIteration' => $mc_iter,
                     'variance' => $var,
                     'lastUpdated' => $lastUpdated,
-                    'HPCAnalysisRequestID' => $hpcID
+                    'hpcrequestID' => $hpcID
                 );
                 // get latest noise ids
                 $query_noise  = $link->prepare("SELECT distinct 
@@ -1225,16 +1234,19 @@ switch ($method) {
             $query->bind_param("i", $edit['editedDataID']);
             $query->execute();
             $result = $query->get_result();
+            $noises = [];
             while (list($noiseID, $noiseType, $timeEntered, $modelID) = mysqli_fetch_array($result)) {
                 if (isset($noiseType)) {
-                    $edit[$noiseType] = array(
+                    $noises[] = array(
                         'noiseID' => $noiseID,
                         'noiseType' => $noiseType,
                         'timeEntered' => $timeEntered,
-                        'modelID' => $modelID
+                        'modelID' => $modelID,
+                        'editedDataID' => $edit['editedDataID']
                     );
                 }
             }
+            $edit['lastest_noises'] = $noises;
             $query->free_result();
             $query->close();
             // get latest hpc request
@@ -1247,20 +1259,13 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
             $query->execute();
             $result = $query->get_result();
             $hpcanalysisrequest = [];
-            if ($result->num_rows === 0) {
-                $edit['hpcanalysisrequest'] = [];
-            }
-            else {
+            if ($result->num_rows !== 0) {
                 while (list($HPCAnalysisRequestID) = mysqli_fetch_array($result)) {
-                    $hpcanalysisrequest = array(
-                        'HPCAnalysisRequestID' => $HPCAnalysisRequestID
-                    );
+                    $edit['hpcrequestID'] = $HPCAnalysisRequestID;
                 }
-                $edit['hpcanalysisrequest'] = $hpcanalysisrequest;
             }
             $query->free_result();
             $query->close();
-            $edit['hpcanalysisrequest'] = $hpcanalysisrequest;
             echo json_encode($edit);
         }
         // Get edit data
@@ -1431,7 +1436,7 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
                     'MCIteration' => $mc_iter,
                     'variance' => $var,
                     'lastUpdated' => $lastUpdated,
-                    'HPCAnalysisRequestID' => $hpcID
+                    'HPCrequestID' => $hpcID
                 );
                 // get latest noise ids
                 $query_noise  = $link->prepare("SELECT distinct 
@@ -1548,7 +1553,7 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
                 $response['MCIteration'] = $mc_iter;
                 $response['variance'] = $var;
                 $response['lastUpdated'] = $lastUpdated;
-                $response['HPCAnalysisRequestID'] = $hpcID;
+                $response['HPCrequestID'] = $hpcID;
 
                 // get latest noise ids
                 $query_noise  = $link->prepare("SELECT distinct 
@@ -1774,11 +1779,11 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
             $query_params = [];
             $query_params_type = '';
             $query  = "SELECT distinct              
-            h.HPCAnalysisRequestID, h.experimentID, h.submitTime, h.clusterName, h.method, m.analType
+            h.HPCAnalysisRequestID, h.experimentID, h.submitTime, h.clusterName, h.method, h.analType
             from HPCAnalysisRequest h
             JOIN HPCDataset d on h.HPCAnalysisRequestID = d.HPCAnalysisRequestID
             JOIN HPCAnalysisResult r on h.HPCAnalysisRequestID = r.HPCAnalysisRequestID
-            JOIN experimentPerson ep on d.experimentID = ep.experimentID
+            JOIN experimentPerson ep on h.experimentID = ep.experimentID
             ";
             if ($USER_DATA['userlevel'] < 3) {
                 $query .= " WHERE ep.personID = ?";
@@ -1835,7 +1840,7 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
             $hpcrequests = [];
             while (list($HPCAnalysisRequestID, $experimentID, $submitTime, $clusterName, $method, $analType) = mysqli_fetch_array($result)) {
                 $hpcrequests[] = array(
-                    'HPCAnalysisRequestID' => $HPCAnalysisRequestID,
+                    'HPCrequestID' => $HPCAnalysisRequestID,
                     'experimentID' => $experimentID,
                     'submitTime' => $submitTime,
                     'cluster' => $clusterName,
@@ -1863,18 +1868,18 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
             $result = $query->get_result();
             if ($result->num_rows === 0) {
                 http_response_code(404);
-                echo json_encode(['error' => 'HPCAnalysisRequest not found']);
+                echo json_encode(['error' => 'HPCRequest not found']);
                 exit();
             }
             elseif ($result->num_rows != 1) {
                 http_response_code(500);
-                echo json_encode(['error' => 'Multiple HPCAnalysisRequest found with the same ID']);
+                echo json_encode(['error' => 'Multiple HPCRequest found with the same ID']);
                 exit();
             }
             $hpcrequest = [];
             while (list($id, $experimentID, $submitTime, $cluster, $method, $analType, $queueStatus, $lastMessage, $updateTime, $startTime, $endTime, $gfacID) = mysqli_fetch_array($result)) {
                 $hpcrequest = array(
-                    'HPCAnalysisRequestID' => $id,
+                    'HPCrequestID' => $id,
                     'experimentID' => $experimentID,
                     'submitTime' => $submitTime,
                     'cluster' => $cluster,
@@ -1896,7 +1901,7 @@ d.simpoints, d.band_volume, d.radial_grid, d.time_grid
             from HPCDataset d
             join editedData e on d.editedDataID = e.editedDataID
             WHERE d.HPCAnalysisRequestID = ?");
-            $query->bind_param("i", $hpcrequest['HPCAnalysisRequestID']);
+            $query->bind_param("i", $hpcrequest['HPCrequestID']);
             $query->execute();
             $result = $query->get_result();
             $datasets = [];
@@ -1940,7 +1945,7 @@ d.simpoints, d.band_volume, d.radial_grid, d.time_grid
             $query  = $link->prepare("SELECT * from HPCAnalysisResult r 
     join HPCAnalysisResultData d on d.HPCAnalysisResultID = r.HPCAnalysisResultID
             where r.HPCAnalysisRequestID = ?");
-            $query->bind_param("i", $hpcrequest['HPCAnalysisRequestID']);
+            $query->bind_param("i", $hpcrequest['HPCrequestID']);
             $query->execute();
             $result = $query->get_result();
             $results = [];
@@ -2002,7 +2007,7 @@ d.simpoints, d.band_volume, d.radial_grid, d.time_grid
             $submitter->submit();
             $response = array();
             $response['success'] = 'HPCAnalysisRequest created';
-            $response['HPCAnalysisRequestIDs'] = $submitter->submitted_requests;
+            $response['HPCrequestIDs'] = $submitter->submitted_requests;
             $response['results'] = $submitter->result;
             echo json_encode($response);
             exit();
