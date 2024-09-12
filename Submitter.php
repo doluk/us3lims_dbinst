@@ -446,7 +446,7 @@ abstract class Submitter
         if ( $this->USER_DATA['userlevel'] > 2 )
         {
             $querystr = "SELECT r.filename as r_filename, r.rawDataID as rawDataID, r.experimentID as experimentID,
-       e.filename as e_filename, e.data as e_data
+       e.filename as e_filename, e.editedDataID as e_data, e.editedDataID as editedDataID
        FROM editedData e join rawData r on r.rawDataID = e.rawDataID 
          WHERE e.rawDataID = ?";
             $queryparams[] = $rawdata_id;
