@@ -224,7 +224,7 @@ switch ($method) {
     e.label,
     e.operatorID FROM experiment e";
             if ($USER_DATA['userlevel'] < 3) {
-                $query_str .= " JOIN experimentPerson ep ON e.experimentID = ep.experimentID WHERE ep.personID = ?";
+                $query_str .= " left outer JOIN experimentPerson ep ON e.experimentID = ep.experimentID WHERE ep.personID = ?";
                 $query = $link->prepare($query_str);
                 $query->bind_param("i", $USER_DATA['id']);
             }
@@ -383,7 +383,7 @@ switch ($method) {
             $query_str  = "SELECT distinct e.experimentID,
             e.dateUpdated as udate, projectID, runID, label, instrumentID, operatorID, rotorID, rotorCalibrationID,
              experimentGUID, type, runType, dateBegin, runTemp, comment
-             FROM experiment e join experimentPerson ep on ep.experimentID = e.experimentID  
+             FROM experiment e left outer join experimentPerson ep on ep.experimentID = e.experimentID  
              WHERE e.experimentID = ?";
             if ($USER_DATA['userlevel'] < 3) {
                 $query_str .= " AND ep.personID = ?";
@@ -779,7 +779,7 @@ switch ($method) {
             r.solutionID,
             TRIM(TRAILING CHAR(0x00) FROM CONVERT (substr(data from 27 for 240) USING utf8)) as description
             from rawData r
-            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            left outer JOIN experimentPerson ep on r.experimentID = ep.experimentID
             ";
             $query_params = [];
             $query_params_type = '';
@@ -818,7 +818,7 @@ switch ($method) {
             $query  = "SELECT distinct  r.rawDataID, r.label, r.experimentID, r.filename, r.comment, r.solutionID,
                                  r.lastUpdated, TRIM(TRAILING CHAR(0x00) FROM CONVERT (substr(data from 27 for 240) USING utf8)) as description
             from rawData r
-            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            left outer JOIN experimentPerson ep on r.experimentID = ep.experimentID
             WHERE r.rawDataID = ?";
             if ($USER_DATA['userlevel'] < 3) {
                 $query .= " AND ep.personID = ?";
@@ -885,7 +885,7 @@ switch ($method) {
             $query_params_type = 'i';
             $query  = "SELECT distinct  r.rawDataID, r.data
             from rawData r
-            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            left outer JOIN experimentPerson ep on r.experimentID = ep.experimentID
             WHERE r.rawDataID = ?";
             if ($USER_DATA['userlevel'] < 3) {
                 $query .= " AND ep.personID = ?";
@@ -911,14 +911,25 @@ switch ($method) {
             $rawdata = [];
             while (list($rawID, $data) = mysqli_fetch_array($result)) {
                 $rawdata['dataID'] = $rawID;
-                $rawdata['data'] = $data;
+                $rawdata['data'] = utf8_encode(serialize($data));
                 $rawdata['dataType'] = 'RawData';
                 $rawdata['dataFormat'] = 'binary';
+            }
+            // print type of $rawdata['data']
+            $resp = json_encode($rawdata);
+
+
+            if (is_bool($resp)) {
+                echo json_encode(['error' => 'Error encoding data']);
+                echo json_last_error_msg();
+            }
+            else {
+                echo $resp;
             }
             $result->free_result();
             $query->free_result();
             $query->close();
-            echo json_encode($rawdata);
+            //echo print_r($rawdata, true);
         }
         // GET HPCAnalysisRequest for raw data
         elseif (preg_match('/^\/rawdata\/(\d+)\/hpcrequests$/', $endpointName, $matches)) {
@@ -927,7 +938,7 @@ switch ($method) {
             $query_str  = "SELECT distinct e.experimentID,
             e.dateUpdated as udate, projectID, runID, label, instrumentID, operatorID, rotorID, rotorCalibrationID,
              experimentGUID, type, runType, dateBegin, runTemp, comment
-             FROM rawData r join experiment e on r.experimentID = e.experimentID join experimentPerson ep on ep.experimentID = e.experimentID  
+             FROM rawData r join experiment e on r.experimentID = e.experimentID left outer join experimentPerson ep on ep.experimentID = e.experimentID  
              WHERE r.rawDataID = ?";
             if ($USER_DATA['userlevel'] < 3) {
                 $query_str .= " AND ep.personID = ?";
@@ -983,7 +994,7 @@ switch ($method) {
     e.editedDataID, e.rawDataID, e.editGUID, e.label, e.filename, e.comment, e.lastUpdated
             from editedData e 
             join rawData r on e.rawDataID = r.rawDataID
-            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            left outer JOIN experimentPerson ep on r.experimentID = ep.experimentID
             WHERE e.rawDataID = ?";
             $query_params = [$editedDataID];
             $query_params_type = 'i';
@@ -1086,7 +1097,7 @@ switch ($method) {
             r.solutionID,
             TRIM(TRAILING CHAR(0x00) FROM CONVERT (substr(data from 27 for 240) USING utf8)) as description
             from rawData r
-            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            left outer JOIN experimentPerson ep on r.experimentID = ep.experimentID
             JOIN experiment e on r.experimentID = e.experimentID
             JOIN project p on e.projectID = p.projectID
              ";
@@ -1171,7 +1182,7 @@ switch ($method) {
     e.editedDataID, e.rawDataID, e.editGUID, e.label, e.filename, e.comment, e.lastUpdated
             from editedData e 
             join rawData r on e.rawDataID = r.rawDataID
-            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            left outer JOIN experimentPerson ep on r.experimentID = ep.experimentID
             WHERE e.editedDataID = ?";
             $query_params = [$rawDataID];
             $query_params_type = 'i';
@@ -1277,7 +1288,7 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
     e.editedDataID, e.data
             from editedData e 
             join rawData r on e.rawDataID = r.rawDataID
-            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            left outer JOIN experimentPerson ep on r.experimentID = ep.experimentID
             WHERE e.editedDataID = ?";
             $query_params = [$rawDataID];
             $query_params_type = 'i';
@@ -1323,7 +1334,7 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
              experimentGUID, type, runType, dateBegin, runTemp, e.comment
              FROM editedData edits join rawData r on r.rawDataID = edits.rawDataID 
                  join experiment e on r.experimentID = e.experimentID 
-                 join experimentPerson ep on ep.experimentID = e.experimentID  
+                 left outer join experimentPerson ep on ep.experimentID = e.experimentID  
              WHERE edits.editedDataID = ?";
             if ($USER_DATA['userlevel'] < 3) {
                 $query_str .= " AND ep.personID = ?";
@@ -1379,7 +1390,7 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
     e.editedDataID, e.rawDataID, e.editGUID, e.label, e.filename, e.comment, e.lastUpdated
             from editedData e 
             join rawData r on e.rawDataID = r.rawDataID
-            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            left outer JOIN experimentPerson ep on r.experimentID = ep.experimentID
             WHERE e.editedDataID = ?";
             $query_params = [$editedDataID];
             $query_params_type = 'i';
@@ -1495,7 +1506,7 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
     e.editedDataID, e.rawDataID, e.editGUID, e.label, e.filename, e.comment, e.lastUpdated
             from editedData e 
             join rawData r on e.rawDataID = r.rawDataID
-            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            left outer JOIN experimentPerson ep on r.experimentID = ep.experimentID
             WHERE e.editedDataID = ?";
             $query_params = [$editedDataID];
             $query_params_type = 'i';
@@ -1611,7 +1622,7 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
     e.editedDataID, e.rawDataID, e.editGUID, e.label, e.filename, e.comment, e.lastUpdated
             from editedData e 
             join rawData r on e.rawDataID = r.rawDataID
-            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            left outer JOIN experimentPerson ep on r.experimentID = ep.experimentID
             WHERE e.editedDataID = ?";
             $query_params = [$editedDataID];
             $query_params_type = 'i';
@@ -1693,7 +1704,7 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
     e.editedDataID, e.rawDataID, e.editGUID, e.label, e.filename, e.comment, e.lastUpdated
             from editedData e 
             join rawData r on e.rawDataID = r.rawDataID
-            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            left outer JOIN experimentPerson ep on r.experimentID = ep.experimentID
             WHERE e.editedDataID = ?";
             $query_params = [$editedDataID];
             $query_params_type = 'i';
@@ -1751,7 +1762,7 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
     e.editedDataID, e.rawDataID, e.editGUID, e.label, e.filename, e.comment, e.lastUpdated
             from editedData e 
             join rawData r on e.rawDataID = r.rawDataID
-            JOIN experimentPerson ep on r.experimentID = ep.experimentID
+            left outer JOIN experimentPerson ep on r.experimentID = ep.experimentID
             WHERE e.editedDataID = ?";
             $query_params = [$editedDataID];
             $query_params_type = 'i';
@@ -1785,7 +1796,7 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
             from HPCAnalysisRequest h
             JOIN HPCDataset d on h.HPCAnalysisRequestID = d.HPCAnalysisRequestID
             JOIN HPCAnalysisResult r on h.HPCAnalysisRequestID = r.HPCAnalysisRequestID
-            JOIN experimentPerson ep on h.experimentID = ep.experimentID
+            left outer JOIN experimentPerson ep on h.experimentID = ep.experimentID
             ";
             if ($USER_DATA['userlevel'] < 3) {
                 $query .= " WHERE ep.personID = ?";
@@ -1863,7 +1874,7 @@ where hpcd.editedDataID = ? order by hpcar.submitTime desc limit 1");
             from HPCAnalysisRequest h
             LEFT OUTER JOIN HPCDataset d on h.HPCAnalysisRequestID = d.HPCAnalysisRequestID
             LEFT OUTER JOIN HPCAnalysisResult r on h.HPCAnalysisRequestID = r.HPCAnalysisRequestID
-            JOIN experimentPerson ep on h.experimentID = ep.experimentID
+            left outer JOIN experimentPerson ep on h.experimentID = ep.experimentID
             WHERE (ep.personID = ? or ? > 2) AND h.HPCAnalysisRequestID = ?");
             $query->bind_param("iii", $USER_DATA['id'],$USER_DATA['userlevel'], $HPCAnalysisRequestID);
             $query->execute();
