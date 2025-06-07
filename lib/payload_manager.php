@@ -125,18 +125,22 @@ abstract class Payload_manager
       $chanindex     = 0;
       $query  = "SELECT coeff1, coeff2, filename, rawData.experimentID " .
                 "FROM rawData, experiment, rotorCalibration " .
-                "WHERE rawData.rawDataID = $rawDataID " .
+                "WHERE rawData.rawDataID =  ? " .
                 "AND rawData.experimentID = experiment.experimentID " .
                 "AND experiment.rotorCalibrationID = rotorCalibration.rotorCalibrationID ";
-      $result = mysqli_query( $link, $query )
-                or die( "Query failed : $query<br />" . mysqli_error($link));
-      if ( mysqli_num_rows( $result ) > 0 )
+      $stmt   = mysqli_prepare( $link, $query );
+      $stmt->bind_param( "i", $rawDataID );
+      $stmt->execute();
+      $result = $stmt->get_result() or die( "Query failed : $query<br />$rawDataID<br />" . $stmt->error );
+      if ( $result->num_rows > 0 )
       {
         list( $coeff1, $coeff2, $filename, $experID ) = mysqli_fetch_array( $result );   // should be 1
         $rotor_stretch = "$coeff1 $coeff2";
         list( $run, $dtype, $cellname, $channel, $waveln, $ftype ) = explode( ".", $filename );
         $chanindex = strpos( "ABCDEFGH", $channel ) / 2;
       }
+      $result->close();
+      $stmt->close();
 
       // We may need speedsteps information
       $speedsteps = array();
@@ -144,10 +148,12 @@ abstract class Payload_manager
                 "delayhrs, delaymins, rotorspeed, acceleration, accelerflag, " .
                 " w2tfirst, w2tlast, timefirst, timelast " .
                 "FROM rawData, speedstep " .
-                "WHERE rawData.rawDataID = $rawDataID " .
+                "WHERE rawData.rawDataID = ? " .
                 "AND rawData.experimentID = speedstep.experimentID ";
-      $result = mysqli_query( $link, $query )
-                or die( "Query failed : $query<br />" . mysqli_error($link));
+      $stmt  = mysqli_prepare( $link, $query );
+      $stmt->bind_param( "i", $rawDataID );
+      $stmt->execute();
+      $result = $stmt->get_result() or die( "Query failed : $query<br />$rawDataID<br />" . $stmt->error );
       while ( list( $stepID, $expID, $scans, $durhrs, $durmins, $dlyhrs, $dlymins,
                     $speed, $accel, $accflag, $w2tf, $w2tl, $timef, $timel ) = mysqli_fetch_array( $result ) )
       {
@@ -171,6 +177,8 @@ abstract class Payload_manager
         if ( $timel > $timelast )
           $timelast     = $timel;
       }
+      $result->close();
+      $stmt->close();
 
       // We need the centerpiece bottom
       $centerpiece_bottom      = 7.3;
@@ -178,27 +186,33 @@ abstract class Payload_manager
       $centerpiece_angle       = 2.5;
       $centerpiece_pathlength  = 1.2;
       $centerpiece_width       = 0.0;
-
       $query  = "SELECT abstractChannel.shape, abstractChannel.bottom, abstractChannel.angle, ".
-                "abstractChannel.pathLength, abstractChannel.width " .
-                "FROM rawData, cell, abstractCenterpiece, abstractChannel " .
-                "WHERE rawData.rawDataID = $rawDataID " .
-                "AND rawData.experimentID = cell.experimentID " .
-                "AND cell.name = $cellname " .
-                "AND cell.abstractCenterpieceID = abstractCenterpiece.abstractCenterpieceID " .
-                "AND abstractCenterpiece.abstractCenterpieceID = abstractChannel.abstractCenterpieceID ".
-                "AND abstractChannel.name = '$channel' ";
-      $result = mysqli_query( $link, $query )
-                or die( "Query failed : $query<br />" . mysqli_error($link));
+          "abstractChannel.pathLength, abstractChannel.width " .
+          "FROM rawData, cell, abstractCenterpiece, abstractChannel " .
+          "WHERE rawData.rawDataID = ? " .
+          "AND rawData.experimentID = cell.experimentID " .
+          "AND cell.name = ? " .
+          "AND cell.abstractCenterpieceID = abstractCenterpiece.abstractCenterpieceID " .
+          "AND abstractCenterpiece.abstractCenterpieceID = abstractChannel.abstractCenterpieceID ".
+          "AND abstractChannel.name = ? ";
+      $args   = array( $rawDataID, $cellname, $channel );
+      $stmt  = mysqli_prepare( $link, $query );
+      $stmt->bind_param( "iss", $rawDataID, $cellname, $channel );
+      $stmt->execute();
+      $result = $stmt->get_result()
+                or die( "Query failed : $query<br />" . print_r( $args, true ) . "<br />" . $stmt->error );
       if (mysqli_num_rows( $result ) < 1 ){
           $query  = "SELECT shape, bottom, angle, pathLength, width " .
               "FROM rawData, cell, abstractCenterpiece " .
-              "WHERE rawData.rawDataID = $rawDataID " .
+              "WHERE rawData.rawDataID = ? " .
               "AND rawData.experimentID = cell.experimentID " .
-              "AND cell.name = $cellname " .
+              "AND cell.name = ? " .
               "AND cell.abstractCenterpieceID = abstractCenterpiece.abstractCenterpieceID";
-          $result = mysqli_query( $link, $query )
-          or die( "Query failed : $query<br />" . mysqli_error($link));
+          $stmt  = mysqli_prepare( $link, $query );
+          $stmt->bind_param( "is", $rawDataID, $cellname );
+          $stmt->execute();
+          $result = $stmt->get_result()
+                    or die( "Query failed : $query<br />" . print_r( $args, true ) . "<br />" . $stmt->error );
       }
       if ( mysqli_num_rows ( $result ) > 0 )
         list( $centerpiece_shape, $centerpiece_bottom, $centerpiece_angle, $centerpiece_pathlength, $centerpiece_width )
@@ -208,16 +222,21 @@ abstract class Payload_manager
           $bottoms            = explode( ":", $centerpiece_bottom );
           $centerpiece_bottom = $bottoms[ $chanindex ];
        }
-
+      $result->close();
+      $stmt->close();
       // We also need some information about the analytes in this cell
       $analytes = array();
+      // language=MariaDB
       $query  = "SELECT type, vbar, molecularWeight, amount " .
                 "FROM rawData, solutionAnalyte, analyte " .
-                "WHERE rawData.rawDataID = $rawDataID " .
+                "WHERE rawData.rawDataID = ? " .
                 "AND rawData.solutionID = solutionAnalyte.solutionID " .
                 "AND solutionAnalyte.analyteID = analyte.analyteID ";
-      $result = mysqli_query( $link, $query )
-                or die( "Query failed : $query<br />" . mysqli_error($link));
+      $stmt  = mysqli_prepare( $link, $query );
+      $stmt->bind_param( "i", $rawDataID );
+      $stmt->execute();
+      $result = $stmt->get_result()
+                or die( "Query failed : $query<br />". "$rawDataID<br />" . $stmt->error );
       while ( list( $type, $vbar, $mw, $amount ) = mysqli_fetch_array( $result ) )
       {
         $analyte['type']   = $type;
@@ -227,7 +246,8 @@ abstract class Payload_manager
 
         $analytes[] = $analyte;
       }
-      
+      $result->close();
+      $stmt->close();
       // Finally, some buffer information
       $density     = 0.0;
       $viscosity   = 0.0;
@@ -236,15 +256,23 @@ abstract class Payload_manager
       $smanual     = 0;
       $description = '';
       $bufferID = '';
+      // language=MariaDB
       $query  = "SELECT buffer.bufferID, viscosity, density, description, compressibility, manual " .
                 "FROM rawData, solutionBuffer, buffer " .
-                "WHERE rawData.rawDataID = $rawDataID " .
+                "WHERE rawData.rawDataID = ? " .
                 "AND rawData.solutionID = solutionBuffer.solutionID " .
                 "AND solutionBuffer.bufferID = buffer.bufferID ";
-      $result = mysqli_query( $link, $query )
-                or die( "Query failed : $query<br />" . mysqli_error($link));
+      $stmt  = mysqli_prepare( $link, $query );
+      $stmt->bind_param( "i", $rawDataID );
+      $stmt->execute();
+      $result = $stmt->get_result()
+                or die( "Query failed : $query<br />$rawDataID<br />" . $stmt->error );
       if ( mysqli_num_rows ( $result ) > 0 )
         list( $bufferID, $viscosity, $density, $description, $compress, $manual ) = mysqli_fetch_array( $result ); // should be 1
+
+
+      $result->close();
+      $stmt->close();
 
       // Turn on 'manual' flag where '  [M]' is present in buffer description
       str_replace( '  [M]', '', $description, $smanual );
@@ -367,14 +395,17 @@ abstract class Payload_manager
       $tot_conc = 0.0;
       $modelXML = "";
       $query    = "SELECT xml FROM model " .
-                  "WHERE editedDataID = $editedDataID " .
+                  "WHERE editedDataID = ? " .
                   "AND description LIKE '%2DSA%IT%' " .
                   "AND description NOT LIKE '%-GL-%' " .
                   "ORDER BY modelID DESC";
-      $result   = mysqli_query( $link, $query )
-            or die( "Query failed : $query<br/>\n" . mysqli_error($link) );
+      $stmt     = mysqli_prepare( $link, $query );
+      $stmt->bind_param( "i", $editedDataID );
+      $stmt->execute();
+      $result   = $stmt->get_result()
+            or die( "Query failed : $query<br/>$editedDataID<br/>\n" . $stmt->error );
 
-      if ( mysqli_num_rows( $result ) > 0 )
+      if ( $result->num_rows > 0 )
       {
         list( $modelXML ) = mysqli_fetch_array( $result );
 
@@ -387,7 +418,8 @@ abstract class Payload_manager
       {
         $tot_conc = -1;   // Mark no 2DSA-IT found
       }
-
+      $result->close();
+      $stmt->close();
       return $tot_conc;
     }
 
@@ -944,9 +976,9 @@ class Payload_GA extends Payload_manager
   // Function to get the posted bucket data on the screen
   function getBuckets( $count, &$buckets )
   {
-    $xtype = ( isset($_POST['x-type']) ) ? $_POST['x-type'] : 's';
-    $ytype = ( isset($_POST['y-type']) ) ? $_POST['y-type'] : 'ff0';
-    $ztype = ( isset($_POST['z-type']) ) ? $_POST['z-type'] : 'vbar';
+    $xtype = $_POST['x-type'] ?? 's';
+    $ytype = $_POST['y-type'] ?? 'ff0';
+    $ztype = $_POST['z-type'] ?? 'vbar';
     $xtlo  = 'x_min';
     $xthi  = 'x_max';
     $ytlo  = 'y_min';
@@ -961,8 +993,7 @@ class Payload_GA extends Payload_manager
       $buckets[$i][$ythi] = $_POST[$i.'_ymax'];
     }
 
-    $parameters['bucket_fixed'] =
-       ( isset($_POST['z-fixed']) ) ? $_POST['z-fixed'] : '0.0';
+    $parameters['bucket_fixed'] = $_POST['z-fixed'] ?? '0.0';
     $parameters['x-type'] = $xtype;
     $parameters['y-type'] = $ytype;
     $parameters['z-type'] = $ztype;

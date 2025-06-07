@@ -194,37 +194,6 @@ HTML;
 
 motd_submit();
 
-// Add rss information from TACC
-require_once 'lib/rss_fetch.inc';
-
-//$time8=microtime(true) - $time0;
-$url = 'http://www.tacc.utexas.edu/rss/TACCUserNews.xml';
-$num_items = 3;
-$rss = fetch_rss($url);
-$items = array_slice($rss->items, 0, $num_items);
-//  $items = array();
-
-echo "<h3>{$rss->channel['title']}</h3>\n";
-
-// Generate table
-echo "<table cellpadding='7' cellspacing='0'>\n";
-foreach ( $items as $item )
-{
-  $title       = $item['title'];
-  $url         = $item['link'];
-  $description = $item['description'];
-
-  echo <<<HTML
-  <tr><td><a href=$url>$title</a></td>
-      <td>$description</td></tr>
-
-HTML;
-}
-echo "</table>\n";
-//$time9=microtime(true) - $time0;
-//echo "  <p>time8 = $time8 </p>";
-//echo "  <p>time9 = $time9 </p>";
-
 ?>
 
 </div>
@@ -280,7 +249,7 @@ function get_experiment_text($link)
 
 //$time0=microtime(true);
   // Get a list of experiments
-  $query  = "SELECT   experimentID, DATE( dateUpdated ) AS udate, runID " .
+  $query  = "SELECT   experimentID, DATE( dateUpdated ) AS udate, runID, label " .
             "FROM     projectPerson, project, experiment " .
             "WHERE    projectPerson.personID = {$_SESSION['id']} " .
             "AND      project.projectID = projectPerson.projectID " .
@@ -293,12 +262,12 @@ function get_experiment_text($link)
                      "  onchange='this.form.submit();'>\n" .
                      "  <option value='null'>run ID not selected...</option>\n";
 
-  while ( list( $expID, $udate, $runID ) = mysqli_fetch_array( $result ) )
+  while ( list( $expID, $udate, $runID, $label ) = mysqli_fetch_array( $result ) )
   {
     $selected = ( $expID == $experimentID )
               ? " selected='selected'"
               : "";
-    $experiment_list .= "  <option value='$expID'$selected>$udate $runID</option>\n";
+    $experiment_list .= "  <option value='$expID'$selected>$udate $runID $label</option>\n";
   }
 //$time1=microtime(true)-$time0;
 //$experiment_list .= "  <option value=time1>$time1</option>\n";
@@ -350,12 +319,18 @@ function get_cell_text($link)
     {
       foreach( $_POST['expIDs'] as $experimentID )
       { // First accumulate arrays of rawDataID,runID,filename
+        // language=MariaDB
         $query  = "SELECT rawDataID, runID, filename " .
-                  "FROM   rawData, experiment " .
-                  "WHERE  rawData.experimentID = $experimentID " .
+                  "FROM   rawData, experiment, projectPerson, project " .
+                  "WHERE  rawData.experimentID = ? AND projectPerson.personID = ? " .
+                  "AND      project.projectID = projectPerson.projectID " .
+                  "AND      experiment.projectID = project.projectID " .
                   "AND    rawData.experimentID = experiment.experimentID ";
-        $result = mysqli_query( $link, $query )
-                  or die("Query failed : $query<br />\n" . mysqli_error($link));
+        $args = [ $experimentID, $_SESSION['id'] ];
+        $stmt = $link->prepare( $query );
+        $stmt->bind_param( 'ii', ...$args );
+        $stmt->execute() or die( "Query failed : $query<br />\n" . $stmt->error );
+        $result = $stmt->get_result() or die( "Error in get_result: $query" . $stmt->error );
 
         while ( list( $rawDataID, $runID, $filename ) = mysqli_fetch_array( $result ) )
         {
@@ -364,6 +339,8 @@ function get_cell_text($link)
           $rrfiles[ $rawDataID ] = $filename;
           $kraw++;
         }
+        $result->close();
+        $stmt->close();
       }
     }
 //$time2=microtime(true)-$time0;
@@ -381,13 +358,17 @@ function get_cell_text($link)
 
       $query  = "SELECT COUNT(*) ".
                 "FROM editedData " .
-                "WHERE rawDataID = $rawDataID";
-      $result = mysqli_query( $link, $query )
-                or die("Query failed : $query<br />\n" . mysqli_error($link));
+                "WHERE rawDataID = ?";
+      $stmt = $link->prepare( $query );
+      $stmt->bind_param( 'i', $rawDataID );
+      $stmt->execute() or die( "Query failed : $query<br />\n" . $stmt->error );
+      $result = $stmt->get_result() or die( "Error in get_result: $query" . $stmt->error );
       list( $count ) = mysqli_fetch_array( $result );
+      $result->close();
+      $stmt->close();
 
       if ( $count > 0 )
-        $rawData_list .= "  <option value='$rawDataID:$filename'>$runID $filename</option>\n";
+        $rawData_list .= "  <option value='$rawDataID:$filename'>$filename</option>\n";
     }
 //$time3=microtime(true)-$time0;
 //$rawData_list .= "  <option value='time1time2time3'>$time1 $time2 $time3</option>\n";

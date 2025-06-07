@@ -328,14 +328,17 @@ function CG_select_setup( $link )
   $personID = $_SESSION['id'];
   $query  = "SELECT model.modelID, description, lastUpdated " .
             "FROM modelPerson, model " .
-            "WHERE personID = $personID " .
+            "WHERE personID = ? " .
             "AND modelPerson.modelID = model.modelID " .
             "AND description LIKE '%CustomGrid%' " .
             "ORDER BY lastUpdated DESC ";
-  $result = mysqli_query( $link, $query )
-            or die( "Query failed : $query<br />\n" . mysqli_error($link) );
+  $stmt = mysqli_prepare( $link, $query );
+  $stmt->bind_param( "i", $personID );
+  $stmt->execute();
+  $result = $stmt->get_result()
+  or die( "Query failed : $query<br />\n" . mysqli_error($link) );
 
-  if ( mysqli_num_rows( $result ) == 0 )
+  if ( $result->num_rows == 0 )
   {
     echo <<<HTML
       <fieldset class='option_value'>
@@ -355,6 +358,8 @@ HTML;
     $description = implode( ".", $descr );
     $models .= "            <option value='$modelID'>$lastUpdated $description</option>\n";
   }
+  $result->close();
+  $stmt->close();
  
 echo<<<HTML
       <fieldset class='option_value'>
@@ -372,15 +377,18 @@ function DMGA_select_setup( $link )
   $personID = $_SESSION['id'];
   $query  = "SELECT model.modelID, description, lastUpdated " .
             "FROM modelPerson, model " .
-            "WHERE personID = $personID " .
+            "WHERE personID = ? " .
             "AND modelPerson.modelID = model.modelID " .
             "AND description LIKE '%DMGA_Constr%' " .
             "ORDER BY lastUpdated DESC ";
             //"AND description LIKE '%CustomGrid%' " .
-  $result = mysqli_query( $link, $query )
-            or die( "Query failed : $query<br />\n" . mysqli_error($link) );
+  $stmt = mysqli_prepare( $link, $query );
+  $stmt->bind_param( "i", $personID );
+  $stmt->execute();
+  $result = $stmt->get_result()
+  or die( "Query failed : $query<br />\n" . mysqli_error($link) );
 
-  if ( mysqli_num_rows( $result ) == 0 )
+  if ( $result->num_rows == 0 )
   {
     echo <<<HTML
       <fieldset class='option_value'>
@@ -400,7 +408,9 @@ HTML;
     $description = implode( ".", $descr );
     $models .= "            <option value='$modelID'>$lastUpdated $description</option>\n";
   }
- 
+  $result->close();
+  $stmt->close();
+
 echo<<<HTML
       <fieldset class='option_value'>
         <legend>Discrete GA Constraints Model</legend>

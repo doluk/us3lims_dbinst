@@ -142,6 +142,13 @@ function collect_config_info() {
             $error_msg( " cluster details missing 'name' for cluster $k" );
             continue;
         }
+        if ( array_key_exists( 'clusters', $v ) ) {
+            $v['queue'] = 'n/a';
+            if ( count( $v['clusters'] ) == 0 ) {
+                $error_msg( " metascheduling clusters is empty for cluster $k" );
+                continue;
+            }
+        }
         if ( !array_key_exists( 'queue', $v ) ) {
             $error_msg( "cluster details missing 'queue' for cluster $k" );
             continue;
@@ -205,12 +212,30 @@ function PAM_name_is_valid($name)
 
 // Random Password generator. 
 // http://www.phpfreaks.com/quickcode/Random_Password_Generator/56.php
-function makeRandomPassword() {
+/**
+ * Generates a random password of either a fixed length or a variable length.
+ *
+ * The password consists of alphanumeric characters excluding easily confused ones.
+ * If a fixed length is provided, the password will be exactly that length; otherwise,
+ * it will be a random length between 6 and 12 characters.
+ *
+ * @param int $fixed_length The fixed length for the password. If zero or not provided,
+ *                          a random length between 6 and 12 will be used.
+ * @return string           A randomly generated password.
+ */
+function makeRandomPassword($fixed_length = 0 ): string
+{
   $salt = "abchefghjkmnpqrstuvwxyz0123456789";
   srand( (double)microtime() * 1234567 ); 
   $i    = 0;
   $pass = '';
-  while ( $i <= 7 ) 
+  // length of random password
+  if ( $fixed_length > 0 ) {
+    $max_len = $fixed_length;
+  } else {
+    $max_len = rand(6, 12);
+  }
+  while ( $i <= $max_len )
   {
     $num  = rand() % 33;
     $tmp  = substr($salt, $num, 1);
