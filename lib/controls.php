@@ -175,6 +175,7 @@ echo<<<HTML
             <option value="0" selected="selected">ASTFEM</option>
             <option value="1">Claverie</option>
             <option value="2">Moving hat</option>
+            <option value="4">ASTFVM</option>
           </select>
       </fieldset>
 HTML;

@@ -186,18 +186,34 @@ abstract class Payload_manager
       $centerpiece_angle       = 2.5;
       $centerpiece_pathlength  = 1.2;
       $centerpiece_width       = 0.0;
-      $query  = "SELECT shape, bottom, angle, pathLength, width " .
-                "FROM rawData, cell, abstractCenterpiece " .
-                "WHERE rawData.rawDataID = ? " .
-                "AND rawData.experimentID = cell.experimentID " .
-                "AND cell.name = ? " .
-                "AND cell.abstractCenterpieceID = abstractCenterpiece.abstractCenterpieceID ";
-      $args   = array( $rawDataID, $cellname );
+      $query  = "SELECT abstractChannel.shape, abstractChannel.bottom, abstractChannel.angle, ".
+          "abstractChannel.pathLength, abstractChannel.width " .
+          "FROM rawData, cell, abstractCenterpiece, abstractChannel " .
+          "WHERE rawData.rawDataID = ? " .
+          "AND rawData.experimentID = cell.experimentID " .
+          "AND cell.name = ? " .
+          "AND cell.abstractCenterpieceID = abstractCenterpiece.abstractCenterpieceID " .
+          "AND abstractCenterpiece.abstractCenterpieceID = abstractChannel.abstractCenterpieceID ".
+          "AND abstractChannel.name = ? ";
+      $args   = array( $rawDataID, $cellname, $channel );
       $stmt  = mysqli_prepare( $link, $query );
-      $stmt->bind_param( "is", $rawDataID, $cellname );
+      $stmt->bind_param( "iss", $rawDataID, $cellname, $channel );
       $stmt->execute();
       $result = $stmt->get_result()
                 or die( "Query failed : $query<br />" . print_r( $args, true ) . "<br />" . $stmt->error );
+      if (mysqli_num_rows( $result ) < 1 ){
+          $query  = "SELECT shape, bottom, angle, pathLength, width " .
+              "FROM rawData, cell, abstractCenterpiece " .
+              "WHERE rawData.rawDataID = ? " .
+              "AND rawData.experimentID = cell.experimentID " .
+              "AND cell.name = ? " .
+              "AND cell.abstractCenterpieceID = abstractCenterpiece.abstractCenterpieceID";
+          $stmt  = mysqli_prepare( $link, $query );
+          $stmt->bind_param( "is", $rawDataID, $cellname );
+          $stmt->execute();
+          $result = $stmt->get_result()
+                    or die( "Query failed : $query<br />" . print_r( $args, true ) . "<br />" . $stmt->error );
+      }
       if ( mysqli_num_rows ( $result ) > 0 )
         list( $centerpiece_shape, $centerpiece_bottom, $centerpiece_angle, $centerpiece_pathlength, $centerpiece_width )
           = mysqli_fetch_array( $result );      // should be 1
@@ -239,8 +255,9 @@ abstract class Payload_manager
       $manual      = 0;
       $smanual     = 0;
       $description = '';
+      $bufferID = '';
       // language=MariaDB
-      $query  = "SELECT viscosity, density, description, compressibility, manual " .
+      $query  = "SELECT buffer.bufferID, viscosity, density, description, compressibility, manual " .
                 "FROM rawData, solutionBuffer, buffer " .
                 "WHERE rawData.rawDataID = ? " .
                 "AND rawData.solutionID = solutionBuffer.solutionID " .
@@ -251,7 +268,7 @@ abstract class Payload_manager
       $result = $stmt->get_result()
                 or die( "Query failed : $query<br />$rawDataID<br />" . $stmt->error );
       if ( mysqli_num_rows ( $result ) > 0 )
-        list( $viscosity, $density, $description, $compress, $manual ) = mysqli_fetch_array( $result ); // should be 1
+        list( $bufferID, $viscosity, $density, $description, $compress, $manual ) = mysqli_fetch_array( $result ); // should be 1
 
 
       $result->close();
@@ -260,24 +277,42 @@ abstract class Payload_manager
       // Turn on 'manual' flag where '  [M]' is present in buffer description
       str_replace( '  [M]', '', $description, $smanual );
       $manual      = ( $smanual != 0 ) ? $smanual : $manual;
-
-
+      // fetch for cosed components
+      $cosedcomponents = array();
+      $query = "SELECT cosedComponentID, name, concentration, s_value, d_value, density, viscosity, overlaying, vbar " .
+               "FROM buffercosedLink WHERE bufferID = $bufferID";
+      $result = mysqli_query( $link, $query )
+                or die( "Query failed : $query<br />" . mysqli_error($link));
+        while ( list( $id, $name, $conc, $s, $D, $dens, $visc, $overlay, $vbar ) = mysqli_fetch_array( $result ) )
+        {
+            $cosed['name']      = $name;
+            $cosed['id']        = $id;
+            $cosed['conc']      = $conc;
+            $cosed['s']         = $s;
+            $cosed['vbar']      = $vbar;
+            $cosed['D']         = $D;
+            $cosed['dens']      = $dens;
+            $cosed['visc']      = $visc;
+            $cosed['overlay']   = $overlay;
+            $cosedcomponents[]  = $cosed;
+        }
       // Save the simulation parameters looked up in the db
-      $params['rotor_stretch'] = $rotor_stretch;
-      $params['centerpiece_bottom'] = $centerpiece_bottom;
-      $params['centerpiece_shape']  = $centerpiece_shape;
-      $params['centerpiece_angle']  = $centerpiece_angle;
+      $params['rotor_stretch']           = $rotor_stretch;
+      $params['centerpiece_bottom']      = $centerpiece_bottom;
+      $params['centerpiece_shape']       = $centerpiece_shape;
+      $params['centerpiece_angle']       = $centerpiece_angle;
       $params['centerpiece_pathlength']  = $centerpiece_pathlength;
-      $params['centerpiece_width']  = $centerpiece_width;
-      $params['density']      = $density;
-      $params['viscosity']    = $viscosity;
-      $params['compress']     = $compress;
-      $params['manual' ]      = $manual;
-      $params['analytes']     = $analytes;
-      $params['speedsteps']   = $speedsteps;
-      $params['rawDataID']    = $rawDataID;
-      $params['experimentID'] = $experID;
-      $params['timelast']     = $timelast;
+      $params['centerpiece_width']       = $centerpiece_width;
+      $params['density']                 = $density;
+      $params['viscosity']               = $viscosity;
+      $params['compress']                = $compress;
+      $params['manual' ]                 = $manual;
+      $params['analytes']                = $analytes;
+      $params['cosedcomponents']         = $cosedcomponents;
+      $params['speedsteps']              = $speedsteps;
+      $params['rawDataID']               = $rawDataID;
+      $params['experimentID']            = $experID;
+      $params['timelast']                = $timelast;
 
       $_SESSION['request'][$dataset_id]['experimentID'] = $experID;
 
