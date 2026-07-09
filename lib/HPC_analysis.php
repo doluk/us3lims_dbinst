@@ -219,7 +219,7 @@ class HPC_2DSA extends HPC_analysis
     $args = [ $HPCAnalysisRequestID, $job_parameters['s_min'], $job_parameters['s_max'],
         $job_parameters['s_grid_points'], $job_parameters['ff0_min'], $job_parameters['ff0_max'],
         $job_parameters['ff0_grid_points'], $job_parameters['uniform_grid'], $job_parameters['mc_iterations'],
-        $job_parameters['tinoise_option'], $job_parameters['meniscus_range'], $job_parameters['meniscus_points'],
+        $job_parameters['tinoise_option'], $job_parameters['meniscus_range'] ?? 0.0, $job_parameters['meniscus_points'] ?? 0,
         $job_parameters['max_iterations'], $job_parameters['rinoise_option'] ];
     $stmt->bind_param("iddiddiiiidiii", ...$args );
     $stmt->execute() or die( "Query failed : $query<br />" . print_r($args, true) . "<br />" . $stmt->error);
@@ -250,8 +250,8 @@ class HPC_2DSA_CG extends HPC_analysis
               "rinoise_option       = ?   ";
     $stmt = mysqli_prepare( $link, $query );
     $args = [ $HPCAnalysisRequestID, $job_parameters['CG_modelID'], $job_parameters['uniform_grid'],
-        $job_parameters['mc_iterations'], $job_parameters['tinoise_option'], $job_parameters['meniscus_range'],
-        $job_parameters['meniscus_points'], $job_parameters['max_iterations'], $job_parameters['rinoise_option'] ];
+        $job_parameters['mc_iterations'], $job_parameters['tinoise_option'], $job_parameters['meniscus_range'] ?? 0.0,
+        $job_parameters['meniscus_points'] ?? 0, $job_parameters['max_iterations'], $job_parameters['rinoise_option'] ];
     $stmt->bind_param("iiiiidiii", ...$args );
 
     $stmt->execute() or die( "Query failed : $query<br />" . print_r($args, true) . "<br />" . $stmt->error);
