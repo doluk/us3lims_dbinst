@@ -278,7 +278,8 @@ HTML;
   if ( $dataset_id == 0 )
   {
     rinoise_option();
-    fit_menibott();
+    fit_primary();
+    fit_secondary();
     iterations_option();
 
     debug_option();
