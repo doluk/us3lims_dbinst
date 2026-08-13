@@ -239,20 +239,20 @@ function set_latest_noises( $link )
   // Compose additional page string documenting any new noise determination
   if ( $nndiff === 0 )
   {
-    $new_noise = "<div style='color:blue;'>" .
+    $new_noise = "<div style='color:var(--us-accent-bright);'>" .
       "Previously selected latest edits and noises are in force." .
       "</div>\n";
   }
   else if ( $nndiff === 1 )
   {
-    $new_noise = "<div style='color:blue;'>" .
+    $new_noise = "<div style='color:var(--us-accent-bright);'>" .
       "Previously selected latest edits are in force.<br/>" .
       "1 new latest noise was detected." .
       "</div>\n";
   }
   else
   {
-    $new_noise = "<div style='color:blue;'>" .
+    $new_noise = "<div style='color:var(--us-accent-bright);'>" .
       "Previously selected latest edits are in force.<br/>" .
       "$nndiff new latest noises were detected." .
       "</div>\n";

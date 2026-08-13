@@ -1,34 +1,83 @@
-/* Stylesheet for queue_viewer.php */
+/* Stylesheet for queue_viewer.php
+ *
+ * Colors come from the tokens of css/common.css; the job status tints are
+ * defined here, once per color scheme.
+ */
 
+:root {
+  --qv-active-bg      : #d7f2df;
+  --qv-active-text    : #1d5b33;
+  --qv-pending-bg     : #dbe6fb;
+  --qv-pending-text   : #24457f;
+  --qv-failed-bg      : #fadcd8;
+  --qv-failed-text    : #8f2c1f;
+  --qv-unsub-bg       : #fbeecd;
+  --qv-unsub-text     : #7a5510;
+  --qv-info-bg        : #fff8dc;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-us-scheme="light"]) {
+    --qv-active-bg    : #1c3b2a;
+    --qv-active-text  : #7ee2a8;
+    --qv-pending-bg   : #22314c;
+    --qv-pending-text : #9dbcf2;
+    --qv-failed-bg    : #43231f;
+    --qv-failed-text  : #ff9d8f;
+    --qv-unsub-bg     : #3d3218;
+    --qv-unsub-text   : #f0cd82;
+    --qv-info-bg      : #2a3038;
+  }
+}
+
+:root[data-us-scheme="dark"] {
+  --qv-active-bg      : #1c3b2a;
+  --qv-active-text    : #7ee2a8;
+  --qv-pending-bg     : #22314c;
+  --qv-pending-text   : #9dbcf2;
+  --qv-failed-bg      : #43231f;
+  --qv-failed-text    : #ff9d8f;
+  --qv-unsub-bg       : #3d3218;
+  --qv-unsub-text     : #f0cd82;
+  --qv-info-bg        : #2a3038;
+}
 
 #content p.title
 {
-  font-weight      : bold;
+  font-weight      : 700;
 }
 
 #content table
 {
   border-collapse  : collapse;
-  border           : solid black 1px;
+  border           : 1px solid var(--us-border);
+  background-color : var(--us-base);
 }
 
 #content table th
 {
-  background-color : #acf;
-  padding          : 4px;
+  background-color : var(--us-base-alt);
+  color            : var(--us-text);
+  padding          : 0.4em 0.6em;
   text-align       : left;
-  border           : solid black 1px;
+  border           : 1px solid var(--us-border);
 }
 
 #content table td
 {
-  padding          : 4px;
-  border           : solid black 1px;
+  padding          : 0.4em 0.6em;
+  border           : 1px solid var(--us-border);
 }
 
 #content table td.decoration
 {
-  background-color : #bbb;
+  background-color : var(--us-window-alt);
+  padding          : 0;
+}
+
+#content table td.decoration hr
+{
+  margin           : 0;
 }
 
 div.more_info
@@ -36,34 +85,54 @@ div.more_info
   position         : absolute;
   width            : 160px;
   margin-left      : 100px;
-  padding          : 15px;
-  background-color : lemonchiffon;
-  border           : 1px solid black;
+  padding          : 10px 12px;
+  background-color : var(--qv-info-bg);
+  color            : var(--us-text);
+  border           : 1px solid var(--us-border);
+  border-radius    : var(--us-radius);
+  box-shadow       : 0 6px 18px var(--us-shadow);
   display          : none;
-  font-size        : 80%;
+  font-size        : 0.85em;
 }
 
 div.more_info div.moreinfo_hdr
 {
   text-align       : center;
-  font-size        : 80%;
-  font-weight      : bold;
-  line-height      : 0.6;
+  font-size        : 0.9em;
+  font-weight      : 700;
+  line-height      : 1.3;
 }
 
-#content table td.running
+/* Job status cells */
+#content table td.status_active,
+#content table td.status_running
 {
-  background-color : #47ff47;
+  background-color : var(--qv-active-bg);
+  color            : var(--qv-active-text);
+  font-weight      : 600;
 }
 
-#content table td.queued
+#content table td.status_pending,
+#content table td.status_queued
 {
-  background-color : #8888ff;
+  background-color : var(--qv-pending-bg);
+  color            : var(--qv-pending-text);
+  font-weight      : 600;
 }
 
-#content table td.canceled
+#content table td.status_failed,
+#content table td.status_canceled
 {
-  background-color : red;
+  background-color : var(--qv-failed-bg);
+  color            : var(--qv-failed-text);
+  font-weight      : 600;
+}
+
+#content table td.status_unsubmitted
+{
+  background-color : var(--qv-unsub-bg);
+  color            : var(--qv-unsub-text);
+  font-weight      : 600;
 }
 
 #content table.summary_table
@@ -80,6 +149,11 @@ div.more_info div.moreinfo_hdr
   padding          : 8px; /* Increased padding */
 }
 
+#content table.summary_table tbody tr:hover td
+{
+  background-color : var(--us-button-hover);
+}
+
 #selection_controls input[type="checkbox"]
 {
   vertical-align   : middle;
@@ -92,7 +166,7 @@ div.more_info div.moreinfo_hdr
 {
   font-weight      : normal;
   font-size        : 0.9em;
-  color            : #555;
+  color            : var(--us-muted-text);
 }
 
 #content table.summary_table th input[type="checkbox"],
@@ -108,6 +182,6 @@ div.more_info div.moreinfo_hdr
 {
   font-weight      : normal;
   font-size        : 0.9em;
-  color            : #555;
+  color            : var(--us-muted-text);
   margin-left      : 5px;
 }

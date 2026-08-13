@@ -83,7 +83,7 @@ function PMGC_option()
           increase significantly before you get a sufficient amount of free compute
           resources.
 
-          <br><br><span style="color:darkRed">N.B. Monte Carlo iterations should be a multiple of the number of threads. e.g. if you select 32 threads, iterations should be 64 or 96.</span>
+          <br><br><span style="color:var(--us-attention);">N.B. Monte Carlo iterations should be a multiple of the number of threads. e.g. if you select 32 threads, iterations should be 64 or 96.</span>
           </p>                                        
           <table class='noborder' style='margin:0px auto;'>
             $cluster_msg                                        

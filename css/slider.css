@@ -1,34 +1,53 @@
 /* slider.css
    styles used in the jQuery slider
+
+   Drawn from the tokens of css/common.css instead of bitmaps, so that the
+   sliders follow the color scheme the way the desktop widgets do.
 */
 
-/*the slider background*/
+/* the slider groove */
 .newslider {
-/**width:230px;**/
 width:460px;
-height:11px;
-background:url(../images/slider-bg-500px.png);
+max-width:100%;
+height:6px;
+background-color:var(--us-base-readonly);
+border:1px solid var(--us-border);
+border-radius:999px;
 position:relative;
-margin:0;
+margin:14px 0;
 padding:0 10px;
+box-sizing:border-box;
 }
- 
+
 /*Style for the slider button*/
 .ui-slider-handle {
-width:24px;
-height:24px;
+width:16px;
+height:16px;
 position:absolute;
-top:-7px;
-margin-left:-12px;
+top:-6px;
+margin-left:-8px;
 z-index:200;
-background:url(../images/slider-button.png);
+display:block;
+background-color:var(--us-base);
+border:2px solid var(--us-accent);
+border-radius:50%;
+box-sizing:border-box;
+cursor:pointer;
+outline:none;
 }
- 
+
+.ui-slider-handle:hover,
+.ui-slider-handle:focus {
+background-color:var(--us-button-hover);
+border-color:var(--us-accent-bright);
+}
+
 /*This is the fill bar color*/
 .ui-widget-header {
-background:url(../images/fill-494px.png) no-repeat left;
-height:8px;
-left:1px;
-top:1px;
+background-color:var(--us-accent);
+height:4px;
+left:0;
+top:0;
 position:absolute;
+border-radius:999px;
 }

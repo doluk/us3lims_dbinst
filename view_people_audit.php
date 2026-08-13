@@ -813,10 +813,11 @@ include 'header.php';
 ?>
 
 <style>
-/* Audit page styles — scoped to avoid touching global layout */
+/* Audit page styles - scoped to avoid touching global layout.
+   All colors come from the design tokens of css/common.css. */
 
 /* Widen the content area for this table-heavy page and add right breathing room */
-#content                { width: auto; max-width: 940px; padding-right: 24px; box-sizing: border-box; }
+#content                { width: auto; max-width: 1000px; padding-right: 24px; box-sizing: border-box; }
 
 /* Scrollable wrapper so the list never pushes outside the viewport */
 .audit-scroll           { overflow-x: auto; width: 100%; }
@@ -826,55 +827,62 @@ include 'header.php';
 .audit-filter td        { padding: 3px 10px 3px 0; }
 
 /* List table */
-.audit-list             { width: 100%; border-collapse: collapse; border: 1px solid #2B4E72; }
-.audit-list th          { background: #2B4E72; color: #fff; padding: 6px 8px; text-align: left;
-                          font-size: 12px; white-space: nowrap; }
-.audit-list td          { padding: 5px 8px; border-bottom: 1px solid #ddd; vertical-align: top;
-                          font-size: 12px; }
-.audit-list tr:hover td { background: #f0f4fb; }
-.audit-ts               { white-space: nowrap; color: #555; }
-.audit-subtext          { font-size: 10px; color: #777; }
-.audit-summary          { color: #333; }
+.audit-list             { width: 100%; border-collapse: collapse;
+                          border: 1px solid var(--us-border);
+                          background: var(--us-base); }
+.audit-list th          { background: var(--us-banner-bg); color: var(--us-banner-text);
+                          padding: 6px 8px; text-align: left;
+                          font-size: 0.95em; white-space: nowrap; }
+.audit-list td          { padding: 5px 8px; border-bottom: 1px solid var(--us-border);
+                          vertical-align: top; font-size: 0.95em; }
+.audit-list tr:hover td { background: var(--us-button-hover); }
+.audit-ts               { white-space: nowrap; color: var(--us-muted-text); }
+.audit-subtext          { font-size: 0.8em; color: var(--us-muted-text); }
+.audit-summary          { color: var(--us-text); }
 .audit-view             { white-space: nowrap; text-align: center; }
 
 /* Detail metadata table */
 .audit-back             { margin-bottom: 8px; }
 .audit-detail           { width: 100%; border-collapse: collapse;
-                          margin-bottom: 20px; }
+                          margin-bottom: 20px; background: var(--us-base); }
 .audit-detail th        { text-align: right; padding: 6px 12px; white-space: nowrap; width: 180px;
-                          background: #f0f2f5; border: 1px solid #ccc;
-                          font-weight: normal; color: #333; }
-.audit-detail td        { padding: 6px 12px; border: 1px solid #ccc; }
-/* Section divider rows — dark blue, readable white text */
-.audit-section          { background: #2B4E72 !important; color: #fff !important;
+                          background: var(--us-base-alt); border: 1px solid var(--us-border);
+                          font-weight: normal; color: var(--us-text); }
+.audit-detail td        { padding: 6px 12px; border: 1px solid var(--us-border); }
+/* Section divider rows - accent filled banners, as in the desktop programs */
+.audit-section          { background: var(--us-banner-bg) !important;
+                          color: var(--us-banner-text) !important;
                           font-size: 0.78em; font-weight: bold;
                           letter-spacing: 0.08em; text-transform: uppercase;
                           padding: 5px 12px; text-align: left !important;
-                          border-color: #2B4E72 !important; }
+                          border-color: var(--us-banner-bg) !important; }
 
 /* Before/after diff table */
-.audit-diff             { border-collapse: collapse; width: 100%; margin-top: 4px; }
-.audit-diff th          { background: #2B4E72; color: #fff; padding: 6px 10px; text-align: left;
-                          font-size: 12px; }
-.audit-diff td          { padding: 6px 10px; border-bottom: 1px solid #ddd; vertical-align: top;
-                          font-size: 12px; }
-.audit-diff tr.audit-changed td { background: #fffbe6; }
-/* Field label column — plain text, not monospace, matches site style */
-.audit-diff td:first-child { color: #333; font-weight: bold; white-space: nowrap; width: 200px; }
+.audit-diff             { border-collapse: collapse; width: 100%; margin-top: 4px;
+                          background: var(--us-base); }
+.audit-diff th          { background: var(--us-banner-bg); color: var(--us-banner-text);
+                          padding: 6px 10px; text-align: left; font-size: 0.95em; }
+.audit-diff td          { padding: 6px 10px; border-bottom: 1px solid var(--us-border);
+                          vertical-align: top; font-size: 0.95em; }
+.audit-diff tr.audit-changed td { background: var(--us-base-alt); }
+/* Field label column - plain text, not monospace, matches site style */
+.audit-diff td:first-child { color: var(--us-text); font-weight: bold; white-space: nowrap; width: 200px; }
 
 /* Value state indicators */
-.audit-val-on           { color: #2a7a2a; font-weight: bold; }
-.audit-val-off          { color: #c0392b; font-weight: bold; }
-.audit-id               { color: #999; font-size: 10px; }
+.audit-val-on           { color: var(--us-success); font-weight: bold; }
+.audit-val-off          { color: var(--us-attention); font-weight: bold; }
+.audit-id               { color: var(--us-muted-text); font-size: 0.8em; }
 
 /* Misc */
-.audit-null, .audit-absent { color: #999; font-style: italic; }
-.audit-empty            { color: #bbb; font-style: italic; }
+.audit-null, .audit-absent { color: var(--us-muted-text); font-style: italic; }
+.audit-empty            { color: var(--us-disabled-text); font-style: italic; }
 .audit-pagination       { margin: 12px 0; }
 .audit-pagination a     { margin: 0 6px; }
-.audit-count            { color: #666; font-size: 0.9em; margin: 6px 0; }
-.audit-none             { color: #999; font-style: italic; }
-.audit-raw              { background: #f8f8f8; padding: 8px; font-size: 0.85em; overflow-x: auto; }
+.audit-count            { color: var(--us-muted-text); font-size: 0.9em; margin: 6px 0; }
+.audit-none             { color: var(--us-muted-text); font-style: italic; }
+.audit-raw              { background: var(--us-base-alt); border: 1px solid var(--us-border);
+                          border-radius: var(--us-radius); padding: 8px; font-size: 0.85em;
+                          overflow-x: auto; }
 </style>
 
 <div id='content'>

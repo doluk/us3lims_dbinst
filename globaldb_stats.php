@@ -326,7 +326,7 @@ HTML;
   for ( $year = $start_year; $year <= $end_year; $year++ )
   {
     // Column headings
-    echo "  <tr style='background-color:#9CC4E4;'><th>Quarter/<br />\n" .
+    echo "  <tr style='background-color:var(--us-banner-bg);color:var(--us-banner-text);'><th>Quarter/<br />\n" .
          "          $year</th>\n";
     $export[$counter]['Quarter'] = $year;
     foreach ( $selected_clusters as $cluster => $shortname )

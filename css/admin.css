@@ -3,18 +3,22 @@
  *
  * Styles common to the admin programs
  *
+ * Colors come from the tokens of css/common.css.
  */
 
 table.admin
 {
-  margin           : 2em;
+  margin           : 1.5em 0;
   border-collapse  : collapse;
+  background-color : var(--us-base);
+  border           : 1px solid var(--us-border);
+  border-radius    : var(--us-radius);
 }
 
 div#content caption
 {
-  font-weight      : bold;
-  margin           : 2em 2em 0em;
+  font-weight      : 700;
+  margin           : 1.5em 0 0.5em;
   text-align       : center;
 }
 
@@ -22,12 +26,17 @@ table.admin td, table.admin th
 {
   text-align       : left;
   border           : 0px;
-  padding          : 0.1em 0.2em;
+  padding          : 0.35em 0.6em;
 }
 
 table.admin thead th
 {
-  background-color : #2790B0; /* teal */
-  color            : black;
+  background-color : var(--us-banner-bg);
+  color            : var(--us-banner-text);
+  font-weight      : 700;
 }
 
+table.admin tbody tr:nth-child(even) td
+{
+  background-color : var(--us-base-alt);
+}

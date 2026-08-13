@@ -368,7 +368,7 @@ HTML;
         // Color-code entry based on status and queue counts
         if ( $cluster->status != 'down'  &&  $cluster->status != 'draining' )
         {
-          $clstat   = "<td STYLE='color: green'>$cluster->status</td>";
+          $clstat   = "<td style='color:var(--us-success);font-weight:600;'>$cluster->status</td>";
           $cque     = $cluster->queued;
           $crun     = $cluster->running;
   
@@ -392,12 +392,12 @@ HTML;
   
         else if ( $cluster->status == 'down' )
         {
-          $clstat   = "<td STYLE='color: red'>$cluster->status</td>";
+          $clstat   = "<td style='color:var(--us-attention);font-weight:600;'>$cluster->status</td>";
         }
   
         else if ( $cluster->status == 'draining' )
         {
-          $clstat   = "<td STYLE='color: DarkViolet'>$cluster->status</td>";
+          $clstat   = "<td style='color:var(--us-accent-bright);font-weight:600;'>$cluster->status</td>";
         }
 
         $clname = $cluster->name;
@@ -535,7 +535,7 @@ HTML;
         // Color-code entry based on status and queue counts
         if ( $cluster->status != 'down'  &&  $cluster->status != 'draining' )
         {
-          $clstat   = "<td STYLE='color: green'>$cluster->status</td>";
+          $clstat   = "<td style='color:var(--us-success);font-weight:600;'>$cluster->status</td>";
           $cque     = $cluster->queued;
           $crun     = $cluster->running;
   
@@ -559,12 +559,12 @@ HTML;
   
         else if ( $cluster->status == 'down' )
         {
-          $clstat   = "<td STYLE='color: red'>$cluster->status</td>";
+          $clstat   = "<td style='color:var(--us-attention);font-weight:600;'>$cluster->status</td>";
         }
   
         else if ( $cluster->status == 'draining' )
         {
-          $clstat   = "<td STYLE='color: DarkViolet'>$cluster->status</td>";
+          $clstat   = "<td style='color:var(--us-accent-bright);font-weight:600;'>$cluster->status</td>";
         }
 
         $clname = $cluster->name;
@@ -601,7 +601,7 @@ HTML;
 ##    if ( $ngamc > 0 )
 ##    {  // Add note about choosing "-gamc" cluster
 ##       $mctext .= <<<HTML
-##       </table><table><tr><td STYLE='color: DarkViolet'>
+##       </table><table><tr><td style='color:var(--us-accent-bright);font-weight:600;'>
 ##<b>N.B.</b> For GA-MC jobs, select any existing "-gamc" variation of a chosen cluster.</td></tr>
 ## HTML;
 ##    }

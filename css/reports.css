@@ -3,34 +3,53 @@
  *
  * Styles common to the reports programs
  *
+ * Colors come from the tokens of css/common.css.
  */
 
+/* A report section header, the web twin of US_Widgets::us_banner */
 .reporthead
 {
-  background-color : #7DD5F0;  /*#2790B0; teal */
-  color            : black;
-  font-size        : 120%;
-  font-weight      : bold;
+  margin           : 1.5em 0 0.75em;
+  padding          : 0.4em 0.75em;
+  border-radius    : var(--us-radius-small);
+  background-color : var(--us-banner-bg);
+  color            : var(--us-banner-text);
+  font-size        : 1.1em;
+  font-weight      : 700;
+}
+
+.reporthead a
+{
+  color            : var(--us-banner-text);
 }
 
 table.solution_info
 {
   text-align       : left;
   border           : 0px;
-  margin           : 2em 1em;
+  margin           : 1.5em 0;
 }
 
 table.solution_info th {
-  font-family      : Arial, Helvetica, sans-serif;
-  font-size        : 14px;
-  font-weight      : bold;
+  font-family      : var(--us-font);
+  font-size        : 1em;
+  font-weight      : 700;
+}
+
+table.solution_info table {
+  border-collapse  : collapse;
+  border           : 1px solid var(--us-border);
 }
 
 table.solution_info table th {
-  background-color : #7DD5F0;
-  border           : 1px solid black;
+  background-color : var(--us-banner-bg);
+  color            : var(--us-banner-text);
+  border           : 1px solid var(--us-border);
+  padding          : 0.35em 0.6em;
 }
 
 table.solution_info table td {
   text-align       : center;
+  border           : 1px solid var(--us-border);
+  padding          : 0.35em 0.6em;
 }

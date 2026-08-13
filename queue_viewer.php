@@ -403,7 +403,7 @@ HTML;
       $jobdata[14] == "ACTIVE" )
         {
            $content .= "<tr><th>Status:</th>" .
-                       "<td bgcolor='#47ff47'>$jobdata[14]</td>\n" .
+                       "<td class='status_active'>$jobdata[14]</td>\n" .
                        "<th>Analysis Type:</th>" .
                        "<td>$jobdata[9]</td></tr>\n";
         }
@@ -411,7 +411,7 @@ HTML;
            $jobdata[14] == "FAILED")
         {
            $content .= "<tr><th>Status:</th>" .
-                       "<td bgcolor='#ff4747'>$jobdata[14]</td>\n" .
+                       "<td class='status_failed'>$jobdata[14]</td>\n" .
                        "<th>Analysis Type:</th>" .
                        "<td>$jobdata[9]</td></tr>\n";
         }
@@ -419,14 +419,14 @@ HTML;
            $jobdata[14] == "PENDING" )
         {
            $content .= "<tr><th>Status:</th>" .
-                       "<td bgcolor='#8888ff'>$jobdata[14]</td>\n" .
+                       "<td class='status_pending'>$jobdata[14]</td>\n" .
                        "<th>Analysis Type:</th>" .
                        "<td>$jobdata[9]</td></tr>\n";
         }
         else if ($jobdata[14] == "Unsubmitted")
         {
            $content .= "<tr><th>Status:</th>" .
-                       "<td bgcolor='#ffff47'>$jobdata[14]</td>\n" .
+                       "<td class='status_unsubmitted'>$jobdata[14]</td>\n" .
                        "<th>Analysis Type:</th>" .
                        "<td>$jobdata[9]</td></tr>\n";
         }

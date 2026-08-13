@@ -2,24 +2,26 @@
 
 fieldset
 {
-  margin-top             : 2em;
+  margin-top             : 1.5em;
   width                  : 50em;
+  max-width              : 100%;
 }
 
-input
+input[type="text"], input[type="number"], input[type="password"], select
 {
   width                  : 25em;
+  max-width              : 100%;
 }
 
 ul.multi_notes
 {
   width                  : 50em;
-  padding                : 1em;
+  max-width              : 100%;
+  padding                : 1em 1em 1em 2em;
 }
 
 ul.multi_notes li
 {
   padding-top            : 1em;
-  width                  : 50em;
+  width                  : auto;
 }
-

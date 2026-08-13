@@ -1,9 +1,15 @@
+/*
+ * supporting_files.css
+ *
+ * Colors and shapes come from the tokens of css/common.css.
+ */
 
 #sf_content{
   float: left;
   border: none;
   margin: 5px;
   width: 800px;
+  max-width: 100%;
   padding: 0px;
   box-sizing: border-box;
   /* text-align: left; */
@@ -14,108 +20,124 @@
 }
 
 .sf_item{
-  margin: 0px;
+  margin: 0px 0px 4px;
   padding: 0px;
   border: none;
 }
 
 #sf_content label{
   display: inline-block;
-  background-color: black;
-  color: white;
-  font-size: 13px;
-  font-weight: bold;
+  background-color: transparent;
+  color: var(--us-window-text);
+  font-size: 1em;
+  font-weight: 700;
   width: 90px;
   text-align: right;
-  padding: 4px;
+  padding: 4px 6px 4px 0px;
   margin: 0px;
 }
 
 .sf_item button {
-  color: black;
-  font-size: 13px;
-  font-weight: normal;
-  padding: 4px;
+  color: var(--us-button-text);
+  font-size: 1em;
+  font-weight: 600;
+  padding: 4px 8px;
   margin: 0px;
   width: 100px;
-  /* border-width: 1px; */
 }
 
 #sf_content select {
-  border: none;
-  padding: 5px;
+  border: 1px solid var(--us-border);
+  border-radius: var(--us-radius);
+  background-color: var(--us-base);
+  color: var(--us-text);
+  padding: 4px 6px;
   width: 300px;
+  max-width: 100%;
 }
 
 #sf_edit_label {
-  background-color: white;
-  color: black;
-  font-size: 14px;
-  font-weight: bold;
+  background-color: transparent;
+  color: var(--us-window-text);
+  font-size: 1.05em;
+  font-weight: 700;
   width: 300px;
   /* text-align: left; */
 }
 
+/* The view/new switch, shaped like the tab bar of the desktop programs */
 #sf_navbar {
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
     justify-content: center;
+    border-bottom: 1px solid var(--us-border);
+    margin-bottom: 0.75em;
   }
 
 .sf_navbar_item {
-    background-color: #D3D3D3;
-    color: black;
-    font-size: 14px;
+    background-color: transparent;
+    color: var(--us-window-text);
+    font-size: 1.05em;
     text-align: center;
     width: 150px;
-    font-weight: bold;
+    font-weight: 600;
     margin: 0px;
-    padding: 5px;
+    padding: 6px 5px;
+    border-bottom: 2px solid transparent;
     cursor: pointer;
 }
 
 #sf_view:hover, #sf_new:hover {
-  background-color: green;
-  color: black;
+  background-color: var(--us-button-hover);
+  color: var(--us-window-text);
 }
 
 #sf_view.active, #sf_new.active {
-  background-color: black;
-  color: white;
+  background-color: transparent;
+  color: var(--us-accent-bright);
+  border-bottom-color: var(--us-accent);
 }
 
 #sf_filename {
-  background-color: white;
-  border: 0px solid white;
-  padding: 0px;
+  background-color: var(--us-base-readonly);
+  color: var(--us-text);
+  border: 1px solid var(--us-border);
+  border-radius: var(--us-radius);
+  padding: 3px 6px;
   width: 300px;
+  max-width: 100%;
   outline: none;
   margin-left: 1px;
-
 }
 
 #sf_desc {
-  background-color: #F8F8FF;
-  border: 0px solid white;
-  padding: 1px;
+  background-color: var(--us-base);
+  color: var(--us-text);
+  border: 1px solid var(--us-border);
+  border-radius: var(--us-radius);
+  padding: 3px 6px;
   width: 508px;
-  height: 25px;
+  max-width: 100%;
+  height: 28px;
 }
 
 #sf_txt_class, #sf_txt_subclass {
-  background-color: white;
-  border: 0px solid white;
+  background-color: var(--us-base);
+  color: var(--us-text);
+  border: 1px solid var(--us-border);
+  border-radius: var(--us-radius);
   width: 300px;
-  padding-top: 5px;
+  max-width: 100%;
+  padding: 3px 6px;
   margin-left: 3px;
   outline: none;
-} 
+}
 
 #sf_sel_class , #sf_sel_subclass{
   display: none;
   margin-left: 3px;
-  height: 25px;
+  height: 28px;
 }
 
 #sf_browse {
@@ -159,14 +181,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-top: 0.5em;
 }
 
 #sf_status {
-  background-color: white;
-  color: black;
+  background-color: transparent;
+  color: var(--us-window-text);
   width: 500px;
-  font-size: 12px;
-  font-weight: bold;
+  max-width: 100%;
+  font-size: 1em;
+  font-weight: 700;
   text-align: left;
   outline: none;
   border: none;
@@ -194,6 +218,8 @@
   max-width: 800px;
   margin-left: auto;
   margin-right: auto;
+  border: 1px solid var(--us-border);
+  border-radius: var(--us-radius);
 }
 
 #txt_viewer {
@@ -205,6 +231,10 @@
   max-width: 100%;
   margin-left: auto;
   margin-right: auto;
+  background-color: var(--us-base);
+  color: var(--us-text);
+  border: 1px solid var(--us-border);
+  border-radius: var(--us-radius);
 }
 
 #image_viewer.active, #pdf_viewer.active, #txt_viewer.active {
