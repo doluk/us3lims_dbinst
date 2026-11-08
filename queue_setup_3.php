@@ -177,6 +177,18 @@ HTML;
 
 include 'config.php';
 include 'db.php';
+include_once 'lib/pipeline.php';
+
+// Analysis pipeline: multi-stage 2DSA/PCSA jobs incl. global fits (only if this instance has the schema)
+$pipeline_button = '';
+if ( pipeline_available( $link ) )
+{
+  $pipeline_button = <<<HTML
+  <p><input type="button" value="Setup Analysis Pipeline"
+            onclick='window.location="pipeline_setup.php"' />
+     queue several stages (e.g. 2DSA-IT, then 2DSA-MC, PCSA and global fits) that start automatically</p>
+HTML;
+}
 
 // Start displaying page
 $page_title = "Queue Setup (completed)";
@@ -331,6 +343,8 @@ HTML;
             onclick='window.location="PCSA_1.php"' />
      <input type="button" value="Clear Queue"
             onclick='window.location="{$_SERVER['PHP_SELF']}?clear=clear"'/></p>
+
+  $pipeline_button
   <!--
      <input type="button" value="Setup 2DSA Control with MW Constraint"
             onclick='window.location="2DSA-MW_1.php"' disabled='disabled' /></p>

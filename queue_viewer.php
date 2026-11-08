@@ -49,6 +49,11 @@ include 'header.php';
 
   <h1 class="title">Queue Viewer</h1>
   <!-- Place page content here -->
+<?php
+include_once 'lib/pipeline.php';
+if ( pipeline_available( $link ) )
+  echo "  <p><a href='pipeline_viewer.php'>Analysis pipelines</a> (multi-stage jobs and their stages)</p>\n";
+?>
 
   <h3>LIMS v3 Queue</h3>
 
